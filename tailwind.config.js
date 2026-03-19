@@ -34,6 +34,8 @@ module.exports = {
         inter: ["Inter-Regular"],
         "inter-semibold": ["Inter-SemiBold"],
         "inter-bold": ["Inter-Bold"],
+        comfortaa: ["Comfortaa-Medium"],
+        "comfortaa-bold": ["Comfortaa-Bold"],
       }
     },
   },
