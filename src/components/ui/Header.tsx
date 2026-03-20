@@ -1,9 +1,16 @@
-import { COLORS } from '@/app/_layout';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { Image, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { COLORS } from "@/constants/color";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React from "react";
+import {
+  Image,
+  Text,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { supabase } from "../../../lib/supabase";
 
 // Header bileşenine dışarıdan iletilebilecek (prop) türlerinin tanımı
 interface HeaderProps {
@@ -14,26 +21,37 @@ interface HeaderProps {
 export default function Header({ avatarUrl: propAvatarUrl }: HeaderProps) {
   // Cihazın durum çubuğu/çentik (notch) gibi güvenli alanlarının ölçülerini alır
   const insets = useSafeAreaInsets();
-  
+
   // Cihazın veya uygulamanın o anki renk temasını (açık/koyu) elde eder
   const scheme = useColorScheme();
-  
+
   // Expo Router yönlendirme kancası (hook), sayfa içi geçişler için kullanılır
   const router = useRouter();
 
-  // NOT: Proje genelinde henüz kurulu bir Supabase Auth sistemi bulunamadığından 
+  const handleProfilePress = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session) {
+      router.push("/profile");
+    } else {
+      router.push("/login");
+    }
+  };
+
+  // NOT: Proje genelinde henüz kurulu bir Supabase Auth sistemi bulunamadığından
   // standart bir Supabase doğrulama mantığını temsil edecek yer tutucu (placeholder) değişkenler eklendi.
   // Gerçek auth state'i entegre edildiğinde `user` değişkenini sisteminizdeki karşılığıyla değiştirin.
   const user = null;
   // user objesi doluysa (truthy) giriş yapılmış kabul edilir, aksi halde false döndürür
   const isAuthenticated = !!user;
 
-  // Öncelikle dışarıdan gelen prop değerini (propAvatarUrl) tercih eder, 
+  // Öncelikle dışarıdan gelen prop değerini (propAvatarUrl) tercih eder,
   // yoksa null kullanarak placeholder ikona dönülmesini sağlar (simüle edilmiş state).
   const avatarUrl = propAvatarUrl || null;
 
   // Tema belirsizse (unspecified/null) hatayı önlemek adına 'light' olarak garantileme yapar
-  const currentScheme = scheme === 'dark' ? 'dark' : 'light';
+  const currentScheme = scheme === "dark" ? "dark" : "light";
   // İlgili tema şemasındaki (açık veya koyu) tasarım sistemine ait renkleri Layout'tan (COLORS) alır
   const themeColors = COLORS[currentScheme];
 
@@ -41,9 +59,12 @@ export default function Header({ avatarUrl: propAvatarUrl }: HeaderProps) {
     // Header'ın ana kapsayıcısı. Alt çizgi (border-b) ve temaya ait ana arka plan renklerini NativeWind ile ayarlar.
     <View
       className="bg-mera-neutral-100 dark:bg-mera-neutral-950 border-b"
-      // Güvenli alan (status bar vb.) boşluğunu paddingTop ile veririz. 
+      // Güvenli alan (status bar vb.) boşluğunu paddingTop ile veririz.
       // borderBottomColor değerini ise layout'taki sekme çubuğu kenarlık rengi ile birebir aynı olması için buradan dinamik olarak uygularız.
-      style={{ paddingTop: insets.top, borderBottomColor: themeColors.tabBarBorder }}
+      style={{
+        paddingTop: insets.top,
+        borderBottomColor: themeColors.tabBarBorder,
+      }}
     >
       {/* Yatay eksende (row) elemanları hizalayıp (items-center) aralarına maksimum boşluk (justify-between) veren içerik sarmalayıcısı */}
       <View className="flex-row items-center justify-between px-4 py-3">
@@ -69,7 +90,7 @@ export default function Header({ avatarUrl: propAvatarUrl }: HeaderProps) {
           rounded-full ile tam yuvarlak kesim elde edilir ve overflow-hidden taşan kısımları (örneğin resim) çerçeve içine hapseder. 
         */}
         <TouchableOpacity
-          onPress={() => router.push('/profile')}
+          onPress={handleProfilePress}
           className="w-10 h-10 items-center justify-center rounded-full overflow-hidden"
           // Profil butonunun arkaplan rengini, layout'ta kullandığımız sekme çubuğu inaktif ikon rengine doğrudan eşitler
           style={{ backgroundColor: themeColors.iconInactive }}
