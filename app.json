@@ -18,7 +18,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.enginsacan.MeraMobile"
+      "package": "com.enginsacan.MeraMobile",
+      "config": {
+        "googleMaps": {
+          "apiKey": "REDACTED"
+        }
+      }
     },
     "web": {
       "output": "static",

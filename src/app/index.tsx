@@ -45,7 +45,7 @@ export default function AnaSayfaScreen() {
   };
 
   // Kart ikon rengi
-  const iconColor = colorScheme === "dark" ? "#192655" : "#192655";
+  const iconColor = colorScheme === "dark" ? "#F8FAFC" : "#192655";
 
   // Henüz uygulanmamış özellikler için alert
   const showComingSoon = () => {
