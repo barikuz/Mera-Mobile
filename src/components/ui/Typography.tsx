@@ -3,11 +3,11 @@
  * Tüm ekranlarda başlıklar, gövde metinleri ve alt bilgiler için kullanılır.
  * Doğrudan <Text> yerine bu bileşen tercih edilmelidir.
  */
-import React from 'react';
-import { Text, TextProps } from 'react-native';
+import React from "react";
+import { Text, TextProps } from "react-native";
 
 // Desteklenen metin varyantları
-type Variant = 'h1' | 'h2' | 'body' | 'caption';
+type Variant = "h1" | "h2" | "body" | "caption";
 
 interface TypographyProps extends TextProps {
   /** Metin stili varyantı — varsayılan olarak 'body' kullanılır */
@@ -19,18 +19,18 @@ interface TypographyProps extends TextProps {
 // Her varyant için NativeWind sınıf eşlemeleri
 const variantClasses: Record<Variant, string> = {
   // Ana sayfa başlıkları — en büyük ve en kalın yazı tipi
-  h1: 'text-3xl font-inter-bold text-mera-neutral-900 dark:text-white',
+  h1: "text-3xl font-inter-bold text-mera-neutral-900 dark:text-white",
   // Bölüm başlıkları — orta büyüklükte, yarı kalın
-  h2: 'text-xl font-inter-semibold text-mera-neutral-900 dark:text-white',
+  h2: "text-xl font-inter-semibold text-mera-neutral-900 dark:text-white",
   // Standart paragraf metni — temel okunabilirlik için normal ağırlık
-  body: 'text-base font-inter text-mera-neutral-900 dark:text-white',
+  body: "text-base font-inter text-mera-neutral-900 dark:text-white",
   // Tarihler, alt bilgiler gibi ikincil metinler — daha küçük ve soluk renk
-  caption: 'text-sm font-inter text-mera-neutral-500',
+  caption: "text-sm font-inter text-mera-neutral-500",
 };
 
 export default function Typography({
-  variant = 'body',
-  className = '',
+  variant = "body",
+  className = "",
   children,
   ...rest
 }: TypographyProps) {
