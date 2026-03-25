@@ -5,9 +5,16 @@ import FishingSpotMapFullscreen from "@/components/ui/FishingSpotMapFullscreen";
 import FishingSpotMapPreview from "@/components/ui/FishingSpotMapPreview";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import Typography from "@/components/ui/Typography";
+import { COLORS } from "@/constants/color";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 export default function AsistanScreen() {
+  const colorScheme = useColorScheme();
+  const accentColor =
+    colorScheme === "dark" ? COLORS.dark.iconActive : COLORS.light.iconActive;
+
   const {
     isExpanded,
     expand,
@@ -20,9 +27,16 @@ export default function AsistanScreen() {
   return (
     <ScreenContainer>
       <View className="flex-1">
-        <Typography variant="h2" className="mt-2 mb-2">
-          Mera Keşfi
-        </Typography>
+        <View className="flex-row items-center mb-2">
+          <MaterialIcons
+            name="location-searching"
+            size={24}
+            color={accentColor}
+          />
+          <Typography variant="h2" className="ml-2">
+            Mera Keşfi
+          </Typography>
+        </View>
 
         <Typography variant="caption" className="mb-4">
           Bölgenizdeki en verimli balık tutma noktalarını harita üzerinden
