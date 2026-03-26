@@ -29,11 +29,13 @@ import { FishingSpot } from "@/hooks/useFishingSpots";
  * @property temperature - Sıcaklık (Celsius)
  * @property windSpeed - Rüzgar hızı (m/s)
  * @property pressure - Atmosfer basıncı (hPa)
+ * @property safetyWarnings - Güvenlik uyarıları listesi (opsiyonel)
  */
 export interface WeatherData {
   temperature: number;
   windSpeed: number;
   pressure: number;
+  safetyWarnings?: string[];
 }
 
 /**
@@ -123,8 +125,8 @@ export default function WeatherCard({
           >
             Yükleniyor...
           </Text>
-        </View>
-      ) /* Error state: Hata ikonu, mesaj ve retry butonu */ : weatherError ? (
+        </View> /* Error state: Hata ikonu, mesaj ve retry butonu */
+      ) : weatherError ? (
         <View style={styles.weatherCardError}>
           <Ionicons name="cloud-offline" size={24} color="#EF4444" />
           <Text style={styles.weatherCardErrorText}>{weatherError}</Text>
@@ -139,52 +141,73 @@ export default function WeatherCard({
               Tekrar Dene
             </Text>
           </TouchableOpacity>
-        </View>
-      ) /* Success state: Hava durumu metrikleri (sıcaklık, rüzgar, basınç) */ : weatherData ? (
-        <View style={styles.weatherCardMetrics}>
-          <View style={styles.weatherMetric}>
-            <Ionicons name="thermometer-outline" size={24} color="#F97316" />
-            <Text style={[styles.weatherMetricValue, { color: primaryTextColor }]}>
-              {weatherData.temperature}°C
-            </Text>
-            <Text
-              style={[
-                styles.weatherMetricLabel,
-                { color: secondaryTextColor },
-              ]}
-            >
-              Sıcaklık
-            </Text>
+        </View> /* Success state: Hava durumu metrikleri (sıcaklık, rüzgar, basınç) */
+      ) : weatherData ? (
+        <>
+          <View style={styles.weatherCardMetrics}>
+            <View style={styles.weatherMetric}>
+              <Ionicons name="thermometer-outline" size={24} color="#F97316" />
+              <Text
+                style={[styles.weatherMetricValue, { color: primaryTextColor }]}
+              >
+                {weatherData.temperature}°C
+              </Text>
+              <Text
+                style={[
+                  styles.weatherMetricLabel,
+                  { color: secondaryTextColor },
+                ]}
+              >
+                Sıcaklık
+              </Text>
+            </View>
+            <View style={styles.weatherMetric}>
+              <Ionicons name="speedometer-outline" size={24} color="#0EA5E9" />
+              <Text
+                style={[styles.weatherMetricValue, { color: primaryTextColor }]}
+              >
+                {weatherData.windSpeed} m/s
+              </Text>
+              <Text
+                style={[
+                  styles.weatherMetricLabel,
+                  { color: secondaryTextColor },
+                ]}
+              >
+                Rüzgar
+              </Text>
+            </View>
+            <View style={styles.weatherMetric}>
+              <Ionicons name="analytics-outline" size={24} color="#8B5CF6" />
+              <Text
+                style={[styles.weatherMetricValue, { color: primaryTextColor }]}
+              >
+                {weatherData.pressure} hPa
+              </Text>
+              <Text
+                style={[
+                  styles.weatherMetricLabel,
+                  { color: secondaryTextColor },
+                ]}
+              >
+                Basınç
+              </Text>
+            </View>
           </View>
-          <View style={styles.weatherMetric}>
-            <Ionicons name="speedometer-outline" size={24} color="#0EA5E9" />
-            <Text style={[styles.weatherMetricValue, { color: primaryTextColor }]}>
-              {weatherData.windSpeed} m/s
-            </Text>
-            <Text
-              style={[
-                styles.weatherMetricLabel,
-                { color: secondaryTextColor },
-              ]}
-            >
-              Rüzgar
-            </Text>
-          </View>
-          <View style={styles.weatherMetric}>
-            <Ionicons name="analytics-outline" size={24} color="#8B5CF6" />
-            <Text style={[styles.weatherMetricValue, { color: primaryTextColor }]}>
-              {weatherData.pressure} hPa
-            </Text>
-            <Text
-              style={[
-                styles.weatherMetricLabel,
-                { color: secondaryTextColor },
-              ]}
-            >
-              Basınç
-            </Text>
-          </View>
-        </View>
+
+          {/* Güvenlik uyarıları varsa listele. Her uyarı için dikkat çekici bir badge render edilir */}
+          {weatherData.safetyWarnings &&
+            weatherData.safetyWarnings.length > 0 && (
+              <View style={styles.safetyWarningsContainer}>
+                {weatherData.safetyWarnings.map((warning, index) => (
+                  <View key={index} style={styles.safetyWarningBadge}>
+                    <Ionicons name="warning" size={16} color="#B45309" />
+                    <Text style={styles.safetyWarningText}>{warning}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+        </>
       ) : null}
     </View>
   );
@@ -276,5 +299,30 @@ const styles = StyleSheet.create({
   weatherMetricLabel: {
     fontSize: 12,
     marginTop: 2,
+  },
+  // Güvenlik uyarıları container'ı: Metriklerin altında, üst margin ile ayrılmış
+  safetyWarningsContainer: {
+    marginTop: 12,
+    gap: 8,
+  },
+  // Güvenlik uyarısı badge'i: Amber/sarı tonlarında dikkat çekici kutu
+  safetyWarningBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7",
+    borderWidth: 1,
+    borderColor: "#F59E0B",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  // Uyarı metni: Koyu amber rengi ile okunabilirlik sağlanır
+  safetyWarningText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#92400E",
+    lineHeight: 18,
   },
 });
