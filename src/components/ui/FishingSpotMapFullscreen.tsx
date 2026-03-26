@@ -1,14 +1,21 @@
 /**
  * FishingSpotMapFullscreen — Tam ekran harita modal'ı.
- * Geri butonu ile kapatılabilir, animasyonlu geçişler desteklenir.
- * Modal ile gerçek tam ekran kapsama sağlanır.
+ *
+ * Bu component, balıkçılık noktalarını (fishing spots) tam ekran bir harita
+ * üzerinde gösterir. Modal yapısı sayesinde mevcut ekranın üzerine bindirilir
+ * ve kullanıcı geri butonuyla kapatabilir.
+ *
+ * Özellikler:
+ * - Reanimated ile animasyonlu açılış/kapanış geçişleri
+ * - Her nokta için Marker ve etrafında Circle overlay
+ * - Seçilen nokta için WeatherCard ile hava durumu bilgisi
+ * - Loading ve error state'leri için ayrı render'lar
  */
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
-  ScrollView,
   StyleProp,
   StyleSheet,
   Text,
@@ -23,8 +30,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "@/constants/color";
 import { MAP_INITIAL_REGION } from "@/constants/map";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useFishingSpots } from "@/hooks/useFishingSpots";
+import { useFishingSpots, FishingSpot } from "@/hooks/useFishingSpots";
+import SpotInfoCard from "./SpotInfoCard";
+import WeatherCard from "./WeatherCard";
 
+/**
+ * FishingSpotMapFullscreen component'inin prop'ları.
+ * @property visible - Modal'ın görünür olup olmadığını kontrol eden boolean
+ * @property onClose - Modal kapatıldığında çağrılacak callback fonksiyonu
+ * @property animatedOverlayStyle - Overlay için Reanimated animated style
+ * @property animatedMapStyle - Harita container'ı için animated style
+ * @property animatedBackButtonStyle - Geri butonu için animated style
+ */
 interface FishingSpotMapFullscreenProps {
   visible: boolean;
   onClose: () => void;
@@ -42,6 +59,9 @@ export default function FishingSpotMapFullscreen({
 }: FishingSpotMapFullscreenProps) {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
+
+  // Tema renklerini belirle: Dark/light mode'a göre accent, callout ve text renkleri
+  // Bu renkler Marker callout'ları ve WeatherCard için kullanılır
   const accentColor =
     colorScheme === "dark" ? COLORS.dark.iconActive : COLORS.light.iconActive;
   const calloutBackground =
@@ -56,16 +76,72 @@ export default function FishingSpotMapFullscreen({
     colorScheme === "dark"
       ? COLORS.dark.iconInactive
       : COLORS.light.iconInactive;
+  const textPrimary =
+    colorScheme === "dark" ? "#F8FAFC" : "#192655";
+
+  // useFishingSpots hook'u: Backend'den balıkçılık noktalarını fetch eder
+  // spots: FishingSpot[], loading: boolean, error: string | null, refetch: () => void
   const { spots, loading, error, refetch } = useFishingSpots();
 
-  // Re-fetch data every time the modal becomes visible
+  // Hava durumu kartı için state'ler
+  // selectedSpot: Kullanıcının tıkladığı marker'ı tutar
+  // weatherData: Backend'den gelen hava durumu verisi (sıcaklık, rüzgar, basınç)
+  const [selectedSpot, setSelectedSpot] = useState<FishingSpot | null>(null);
+  const [weatherData, setWeatherData] = useState<{
+    temperature: number;
+    windSpeed: number;
+    pressure: number;
+  } | null>(null);
+  const [isWeatherLoading, setIsWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+
+  // Custom backend'den hava durumu verisini fetch eder
+  // API endpoint: /weather?lat={lat}&lon={lon}
+  // Dönen veri: { temperature, windSpeed, pressure }
+  const fetchWeather = async (lat: number, lon: number) => {
+    setIsWeatherLoading(true);
+    setWeatherError(null);
+    setWeatherData(null);
+
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || "";
+      const response = await fetch(`${baseUrl}/weather?lat=${lat}&lon=${lon}`);
+      if (!response.ok) throw new Error("Failed to fetch weather");
+      const data = await response.json();
+      setWeatherData(data);
+    } catch {
+      setWeatherError("Hava durumu yüklenemedi");
+    } finally {
+      setIsWeatherLoading(false);
+    }
+  };
+
+  // Marker'a tıklandığında çalışan handler
+  // Seçili spot'u state'e atar ve o nokta için hava durumu fetch'ini başlatır
+  const handleMarkerPress = (spot: FishingSpot) => {
+    setSelectedSpot(spot);
+    fetchWeather(spot.center_lat, spot.center_lng);
+  };
+
+  // Hava durumu kartını kapatır ve ilgili state'leri temizler
+  const handleCloseWeatherCard = () => {
+    setSelectedSpot(null);
+    setWeatherData(null);
+    setWeatherError(null);
+  };
+
+  // Modal her görünür olduğunda fishing spots verisini yeniden fetch eder
+  // Modal kapandığında weather kartı state'ini temizler
   useEffect(() => {
     if (visible) {
       refetch();
+    } else {
+      // Modal kapandığında state'leri sıfırla
+      handleCloseWeatherCard();
     }
   }, [visible, refetch]);
 
-  // Loading state
+  // Loading durumu render'ı: Veriler yüklenirken spinner gösterilir
   if (loading) {
     return (
       <Modal
@@ -102,7 +178,7 @@ export default function FishingSpotMapFullscreen({
     );
   }
 
-  // Error state
+  // Hata durumu render'ı: API hatası olduğunda error mesajı gösterilir
   if (error) {
     return (
       <Modal
@@ -139,7 +215,7 @@ export default function FishingSpotMapFullscreen({
     );
   }
 
-  // Success state with map
+  // Başarılı durum: Harita ve fishing spot marker'ları render edilir
   return (
     <Modal
       visible={visible}
@@ -157,6 +233,8 @@ export default function FishingSpotMapFullscreen({
             showsUserLocation={true}
             showsMyLocationButton={false}
           >
+            {/* Her fishing spot için Marker ve Circle overlay render edilir.
+                Fragment kullanılmasının sebebi: Aynı key ile birden fazla element döndürmek */}
             {spots.map((spot) => (
               <React.Fragment key={spot.id}>
                 <Marker
@@ -167,76 +245,16 @@ export default function FishingSpotMapFullscreen({
                   title={spot.name}
                   description={spot.water_type}
                   pinColor={accentColor}
+                  onPress={() => handleMarkerPress(spot)}
                 >
                   <Callout tooltip>
-                    <View
-                      style={[
-                        styles.calloutContainer,
-                        {
-                          backgroundColor: calloutBackground,
-                          borderColor: calloutBorder,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[styles.calloutTitle, { color: accentColor }]}
-                      >
-                        {spot.name}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.calloutMeta,
-                          { color: calloutSecondaryText },
-                        ]}
-                      >
-                        {spot.water_type}
-                      </Text>
-
-                      {spot.description ? (
-                        <ScrollView
-                          style={styles.calloutScroll}
-                          nestedScrollEnabled
-                        >
-                          <Text
-                            style={[
-                              styles.calloutDescription,
-                              { color: calloutSecondaryText },
-                            ]}
-                          >
-                            {spot.description}
-                          </Text>
-                        </ScrollView>
-                      ) : null}
-
-                      {spot.min_depth !== null && spot.max_depth !== null ? (
-                        <Text
-                          style={[
-                            styles.calloutDepth,
-                            { color: calloutSecondaryText },
-                          ]}
-                        >
-                          {spot.min_depth} - {spot.max_depth} metre
-                        </Text>
-                      ) : spot.min_depth !== null ? (
-                        <Text
-                          style={[
-                            styles.calloutDepth,
-                            { color: calloutSecondaryText },
-                          ]}
-                        >
-                          Minimum Derinlik: {spot.min_depth} metre
-                        </Text>
-                      ) : spot.max_depth !== null ? (
-                        <Text
-                          style={[
-                            styles.calloutDepth,
-                            { color: calloutSecondaryText },
-                          ]}
-                        >
-                          Maksimum Derinlik: {spot.max_depth} metre
-                        </Text>
-                      ) : null}
-                    </View>
+                    <SpotInfoCard
+                      spot={spot}
+                      accentColor={accentColor}
+                      backgroundColor={calloutBackground}
+                      borderColor={calloutBorder}
+                      secondaryTextColor={calloutSecondaryText}
+                    />
                   </Callout>
                 </Marker>
                 <Circle
@@ -269,6 +287,24 @@ export default function FishingSpotMapFullscreen({
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </Animated.View>
+
+        {/* Seçili nokta için hava durumu kartı. Marker'a tıklandığında görünür olur */}
+        {selectedSpot && (
+          <WeatherCard
+            selectedSpot={selectedSpot}
+            weatherData={weatherData}
+            isWeatherLoading={isWeatherLoading}
+            weatherError={weatherError}
+            onClose={handleCloseWeatherCard}
+            onRetry={() => fetchWeather(selectedSpot.center_lat, selectedSpot.center_lng)}
+            bottomInset={insets.bottom}
+            accentColor={accentColor}
+            backgroundColor={calloutBackground}
+            borderColor={calloutBorder}
+            secondaryTextColor={calloutSecondaryText}
+            primaryTextColor={textPrimary}
+          />
+        )}
       </Animated.View>
     </Modal>
   );
@@ -316,34 +352,5 @@ const styles = StyleSheet.create({
     color: "#F8FAFC",
     textAlign: "center",
     paddingHorizontal: 24,
-  },
-  calloutContainer: {
-    width: 260,
-    maxWidth: 280,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  calloutTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  calloutMeta: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  calloutScroll: {
-    maxHeight: 96,
-    marginTop: 8,
-  },
-  calloutDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  calloutDepth: {
-    fontSize: 13,
-    marginTop: 8,
-    fontWeight: "600",
   },
 });
