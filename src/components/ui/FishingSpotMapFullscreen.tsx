@@ -153,9 +153,9 @@ export default function FishingSpotMapFullscreen({
         onRequestClose={onClose}
       >
         <Animated.View style={[styles.container, animatedOverlayStyle]}>
-          <View style={styles.centerContent}>
+          <View style={[styles.centerContent, { backgroundColor: calloutBackground }]}>
             <ActivityIndicator size="large" color={accentColor} />
-            <Text style={styles.loadingText}>Meralar yükleniyor...</Text>
+            <Text style={[styles.loadingText, { color: textPrimary }]}>Meralar yükleniyor...</Text>
           </View>
 
           <Animated.View
@@ -190,9 +190,9 @@ export default function FishingSpotMapFullscreen({
         onRequestClose={onClose}
       >
         <Animated.View style={[styles.container, animatedOverlayStyle]}>
-          <View style={styles.centerContent}>
+          <View style={[styles.centerContent, { backgroundColor: calloutBackground }]}>
             <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={[styles.errorText, { color: textPrimary }]}>{error}</Text>
           </View>
 
           <Animated.View
@@ -339,17 +339,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0F162A",
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#F8FAFC",
   },
   errorText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#F8FAFC",
     textAlign: "center",
     paddingHorizontal: 24,
   },
