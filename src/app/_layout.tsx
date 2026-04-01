@@ -149,7 +149,7 @@ export default function TabLayout() {
       >
         {/* ── 1. Sekme: Mağaza ────────────────────────────────────────────── */}
         <Tabs.Screen
-          name="magaza" // Eşleşen expo-router dosya yolu: 'src/app/magaza.tsx'
+          name="shop" // Eşleşen expo-router dosya yolu: 'src/app/shop.tsx'
           options={{
             title: "Mağaza", // Alt menü barında ikonun hemen altında yer alacak başlık adı
             tabBarIcon: ({ color, size }) => (
