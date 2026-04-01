@@ -83,7 +83,7 @@ export default function AnaSayfaScreen() {
           icon={
             <MaterialCommunityIcons name="store" size={28} color={iconColor} />
           }
-          onPress={() => router.push("/magaza")}
+          onPress={() => router.push("/shop")}
         />
       </View>
 
