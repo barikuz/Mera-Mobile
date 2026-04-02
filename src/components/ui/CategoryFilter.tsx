@@ -53,14 +53,14 @@ export default function CategoryFilter({
               activeOpacity={0.7}
               className={`px-4 py-2 rounded-full ${
                 isActive
-                  ? "bg-mera-accent"
+                  ? "bg-mera-primary dark:bg-mera-accent"
                   : "bg-white dark:bg-mera-neutral-900 border border-mera-neutral-200 dark:border-mera-neutral-500/30"
               }`}
             >
               <Text
                 className={`text-sm font-inter-semibold ${
                   isActive
-                    ? "text-mera-primary"
+                    ? "text-white dark:text-mera-neutral-900"
                     : "text-mera-neutral-500 dark:text-mera-neutral-200"
                 }`}
               >
