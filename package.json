@@ -17,6 +17,7 @@
     "@react-navigation/elements": "^2.8.1",
     "@react-navigation/native": "^7.1.28",
     "@supabase/supabase-js": "^2.99.3",
+    "@tanstack/react-query": "^5.96.1",
     "expo": "~55.0.5",
     "expo-constants": "~55.0.7",
     "expo-dev-client": "~55.0.11",
