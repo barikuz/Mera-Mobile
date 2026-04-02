@@ -17,6 +17,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Tabs } from "expo-router";
 import React, { useEffect } from "react";
 import { Platform, useColorScheme } from "react-native";
@@ -33,6 +34,8 @@ import { supabase } from "../../lib/supabase";
 
 // Fontlar asenkron olarak yüklenene dek açılış ekranını (Splash Screen) görünür tutuyoruz
 SplashScreen.preventAutoHideAsync();
+
+const queryClient = new QueryClient();
 
 export default function TabLayout() {
   // Cihazın mevcut renk temasını (karanlık veya açık) alır
@@ -109,118 +112,124 @@ export default function TabLayout() {
   return (
     // Uygulama içerisindeki React Navigation temeli, cihazın karanlık/açık mod durumuna göre entegre edilir
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      {/* İkon içeren özel animasyonlu açılış ekranı katmanı */}
-      <AnimatedSplashOverlay />
+      <QueryClientProvider client={queryClient}>
+        {/* İkon içeren özel animasyonlu açılış ekranı katmanı */}
+        <AnimatedSplashOverlay />
 
-      <Tabs
-        screenOptions={{
-          // Her sekmenin üst kısmında paylaşılan (shared) Header bileşenini kullanmasını belirleriz
-          header: () => <Header />,
+        <Tabs
+          screenOptions={{
+            // Her sekmenin üst kısmında paylaşılan (shared) Header bileşenini kullanmasını belirleriz
+            header: () => <Header />,
 
-          // ── Sekme Çubuğu (Tab Bar) Konteyner Stil Ayarları ────────────────────
-          tabBarStyle: {
-            backgroundColor: c.tabBarBackground, // Aktif temaya uygun taban arka plan rengi
-            borderTopColor: c.tabBarBorder, // Sekme çubuğunun üst ayırıcı çizgisi (border)
-            borderTopWidth: 1, // İnce ve net bir sınır çizgisi
+            // ── Sekme Çubuğu (Tab Bar) Konteyner Stil Ayarları ────────────────────
+            tabBarStyle: {
+              backgroundColor: c.tabBarBackground, // Aktif temaya uygun taban arka plan rengi
+              borderTopColor: c.tabBarBorder, // Sekme çubuğunun üst ayırıcı çizgisi (border)
+              borderTopWidth: 1, // İnce ve net bir sınır çizgisi
 
-            // İşletim sistemine (OS) özgü ekran altı yüksekliği (Çentikli yapılar ve Home Indicator için):
-            // Android platformu için ekran bitiminden başlar, iOS cephesinde Safe Area'ya riayet eder
-            height: Platform.select({ ios: 80, android: 64 }),
+              // İşletim sistemine (OS) özgü ekran altı yüksekliği (Çentikli yapılar ve Home Indicator için):
+              // Android platformu için ekran bitiminden başlar, iOS cephesinde Safe Area'ya riayet eder
+              height: Platform.select({ ios: 80, android: 64 }),
 
-            // Alt kısımdan (padding) bırakılan emniyet boşluğu
-            paddingBottom: Platform.select({ ios: 24, android: 8 }),
-            paddingTop: 8, // İkonların üst kısımdan bırakacağı estetik iç boşluk
+              // Alt kısımdan (padding) bırakılan emniyet boşluğu
+              paddingBottom: Platform.select({ ios: 24, android: 8 }),
+              paddingTop: 8, // İkonların üst kısımdan bırakacağı estetik iç boşluk
 
-            elevation: 0, // Android'in varsayılan düşen gölgesini siler (Flat/Düz görünüm için)
-            shadowOpacity: 0, // iOS'in varsayılan düşen gölgesini siler (Flat/Düz görünüm için)
-          },
+              elevation: 0, // Android'in varsayılan düşen gölgesini siler (Flat/Düz görünüm için)
+              shadowOpacity: 0, // iOS'in varsayılan düşen gölgesini siler (Flat/Düz görünüm için)
+            },
 
-          // ── İkon & Metin (Label) Durum Renklendirmeleri ─────────────────────────
-          tabBarActiveTintColor: c.iconActive, // İlgili sekmeye geçildiğinde simgeye uygulanacak odak rengi
-          tabBarInactiveTintColor: c.iconInactive, // Sekme seçili olmadığında uygulanacak donuk/pasif renk
+            // ── İkon & Metin (Label) Durum Renklendirmeleri ─────────────────────────
+            tabBarActiveTintColor: c.iconActive, // İlgili sekmeye geçildiğinde simgeye uygulanacak odak rengi
+            tabBarInactiveTintColor: c.iconInactive, // Sekme seçili olmadığında uygulanacak donuk/pasif renk
 
-          // ── Metin (Label) Tipografi Ayarları ────────────────────────────────────
-          tabBarLabelStyle: {
-            fontFamily: "Inter-SemiBold", // Yarı kalın (SemiBold) gövde fontu
-            fontSize: 11, // Okunaklılığın korunarak alanın kaplanmasını engelleyen boyut
-            letterSpacing: 0.2, // Harfler arası dar ferahlık (tipografik estetik için)
-          },
-        }}
-      >
-        {/* ── 1. Sekme: Mağaza ────────────────────────────────────────────── */}
-        <Tabs.Screen
-          name="shop" // Eşleşen expo-router dosya yolu: 'src/app/shop.tsx'
-          options={{
-            title: "Mağaza", // Alt menü barında ikonun hemen altında yer alacak başlık adı
-            tabBarIcon: ({ color, size }) => (
-              // İçerikle bağlantılı ve işlevsellik katması amacıyla bir mağaza ikonu kullanıyoruz
-              <MaterialCommunityIcons name="store" color={color} size={size} />
-            ),
+            // ── Metin (Label) Tipografi Ayarları ────────────────────────────────────
+            tabBarLabelStyle: {
+              fontFamily: "Inter-SemiBold", // Yarı kalın (SemiBold) gövde fontu
+              fontSize: 11, // Okunaklılığın korunarak alanın kaplanmasını engelleyen boyut
+              letterSpacing: 0.2, // Harfler arası dar ferahlık (tipografik estetik için)
+            },
           }}
-        />
+        >
+          {/* ── 1. Sekme: Mağaza ────────────────────────────────────────────── */}
+          <Tabs.Screen
+            name="shop" // Eşleşen expo-router dosya yolu: 'src/app/shop.tsx'
+            options={{
+              title: "Mağaza", // Alt menü barında ikonun hemen altında yer alacak başlık adı
+              tabBarIcon: ({ color, size }) => (
+                // İçerikle bağlantılı ve işlevsellik katması amacıyla bir mağaza ikonu kullanıyoruz
+                <MaterialCommunityIcons
+                  name="store"
+                  color={color}
+                  size={size}
+                />
+              ),
+            }}
+          />
 
-        {/* ── 2. Sekme: Ana Sayfa ─────────────────────────────────────────── */}
-        <Tabs.Screen
-          name="index" // Eşleşen expo-router dosya yolu: 'src/app/index.tsx' (Kök dizin giriş sayfası)
-          options={{
-            title: "Ana Sayfa", // Alt menü barı başlık adı
-            tabBarIcon: ({ color, size }) => (
-              // Genel alışveriş/ev manasını taşıyan klasik bir ev simgesi
-              <Ionicons name="home-outline" color={color} size={size} />
-            ),
-          }}
-        />
+          {/* ── 2. Sekme: Ana Sayfa ─────────────────────────────────────────── */}
+          <Tabs.Screen
+            name="index" // Eşleşen expo-router dosya yolu: 'src/app/index.tsx' (Kök dizin giriş sayfası)
+            options={{
+              title: "Ana Sayfa", // Alt menü barı başlık adı
+              tabBarIcon: ({ color, size }) => (
+                // Genel alışveriş/ev manasını taşıyan klasik bir ev simgesi
+                <Ionicons name="home-outline" color={color} size={size} />
+              ),
+            }}
+          />
 
-        {/* ── 3. Sekme: Asistan ───────────────────────────────────────────── */}
-        <Tabs.Screen
-          name="asistan" // Eşleşen expo-router dosya yolu: 'src/app/asistan.tsx'
-          options={{
-            title: "Asistan", // Alt menü barı başlık adı
-            tabBarIcon: ({ color, size }) => (
-              // Yapay zeka modülünü veya iletişim asistanını andıran simge
-              <MaterialIcons name="assistant" color={color} size={size} />
-            ),
-          }}
-        />
+          {/* ── 3. Sekme: Asistan ───────────────────────────────────────────── */}
+          <Tabs.Screen
+            name="asistan" // Eşleşen expo-router dosya yolu: 'src/app/asistan.tsx'
+            options={{
+              title: "Asistan", // Alt menü barı başlık adı
+              tabBarIcon: ({ color, size }) => (
+                // Yapay zeka modülünü veya iletişim asistanını andıran simge
+                <MaterialIcons name="assistant" color={color} size={size} />
+              ),
+            }}
+          />
 
-        {/* ── Gizli Rota: Explore (Eski projeden kalma veya bağımsız sayfa) ─ */}
-        <Tabs.Screen
-          name="explore" // Eşleşen expo-router dosya yolu: 'src/app/explore.tsx'
-          // 'href: null' propertysi verilerek bu ekranın sekme navigasyonunda bir buton olarak listelenmesinin aktif olarak önüne geçilir.
-          options={{ href: null }}
-        />
+          {/* ── Gizli Rota: Explore (Eski projeden kalma veya bağımsız sayfa) ─ */}
+          <Tabs.Screen
+            name="explore" // Eşleşen expo-router dosya yolu: 'src/app/explore.tsx'
+            // 'href: null' propertysi verilerek bu ekranın sekme navigasyonunda bir buton olarak listelenmesinin aktif olarak önüne geçilir.
+            options={{ href: null }}
+          />
 
-        {/* ── Mantıksal Stack Ekranı: Profil ──────────────────────────────── */}
-        <Tabs.Screen
-          name="profile" // Eşleşen expo-router dosya yolu: 'src/app/profile.tsx'
-          options={{
-            title: "Profil",
-            // 'href: null' değeri profil sekmesinin fiziksel bir sekme butonu (tab icon) oluşturmasını engeller.
-            // Bu sayede profile sadece uygulama içerisindeki bir Header yönlendirmesinden (router.push) girilebilir ve normal bir stack sayfasıymış gibi tepki verir.
-            href: null,
-          }}
-        />
+          {/* ── Mantıksal Stack Ekranı: Profil ──────────────────────────────── */}
+          <Tabs.Screen
+            name="profile" // Eşleşen expo-router dosya yolu: 'src/app/profile.tsx'
+            options={{
+              title: "Profil",
+              // 'href: null' değeri profil sekmesinin fiziksel bir sekme butonu (tab icon) oluşturmasını engeller.
+              // Bu sayede profile sadece uygulama içerisindeki bir Header yönlendirmesinden (router.push) girilebilir ve normal bir stack sayfasıymış gibi tepki verir.
+              href: null,
+            }}
+          />
 
-        {/* ── Mantıksal Stack Ekranları: Auth ─────────────────────────────── */}
-        <Tabs.Screen
-          name="login"
-          options={{
-            title: "Giriş Yap",
-            href: null,
-            tabBarStyle: { display: "none" },
-            headerShown: false,
-          }}
-        />
-        <Tabs.Screen
-          name="register"
-          options={{
-            title: "Kayıt Ol",
-            href: null,
-            tabBarStyle: { display: "none" },
-            headerShown: false,
-          }}
-        />
-      </Tabs>
+          {/* ── Mantıksal Stack Ekranları: Auth ─────────────────────────────── */}
+          <Tabs.Screen
+            name="login"
+            options={{
+              title: "Giriş Yap",
+              href: null,
+              tabBarStyle: { display: "none" },
+              headerShown: false,
+            }}
+          />
+          <Tabs.Screen
+            name="register"
+            options={{
+              title: "Kayıt Ol",
+              href: null,
+              tabBarStyle: { display: "none" },
+              headerShown: false,
+            }}
+          />
+        </Tabs>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

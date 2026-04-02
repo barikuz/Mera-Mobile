@@ -16,8 +16,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  category: string;
-  image: string;
+  image_url: string;
 }
 
 interface ProductCardProps {
@@ -48,7 +47,7 @@ export default function ProductCard({
       {/* Ürün Görseli */}
       <View className="aspect-square bg-mera-neutral-100 dark:bg-mera-neutral-950">
         <Image
-          source={{ uri: product.image }}
+          source={{ uri: product.image_url }}
           className="w-full h-full"
           resizeMode="cover"
         />
