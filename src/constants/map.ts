@@ -10,3 +10,23 @@ export const MAP_INITIAL_REGION: Region = {
   latitudeDelta: 0.5,
   longitudeDelta: 0.5,
 };
+
+export function getMapInitialRegion(
+  coords:
+    | {
+        latitude: number;
+        longitude: number;
+      }
+    | null
+    | undefined,
+): Region {
+  if (!coords) {
+    return MAP_INITIAL_REGION;
+  }
+
+  return {
+    ...MAP_INITIAL_REGION,
+    latitude: coords.latitude,
+    longitude: coords.longitude,
+  };
+}
