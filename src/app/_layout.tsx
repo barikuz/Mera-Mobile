@@ -117,9 +117,9 @@ export default function TabLayout() {
         <AnimatedSplashOverlay />
 
         <Tabs
-          screenOptions={{
+          screenOptions={({ route }) => ({
             // Her sekmenin üst kısmında paylaşılan (shared) Header bileşenini kullanmasını belirleriz
-            header: () => <Header />,
+            header: () => <Header showCartButton={route.name === "shop"} />,
 
             // ── Sekme Çubuğu (Tab Bar) Konteyner Stil Ayarları ────────────────────
             tabBarStyle: {
@@ -149,7 +149,7 @@ export default function TabLayout() {
               fontSize: 11, // Okunaklılığın korunarak alanın kaplanmasını engelleyen boyut
               letterSpacing: 0.2, // Harfler arası dar ferahlık (tipografik estetik için)
             },
-          }}
+          })}
         >
           {/* ── 1. Sekme: Mağaza ────────────────────────────────────────────── */}
           <Tabs.Screen
@@ -205,6 +205,15 @@ export default function TabLayout() {
               title: "Profil",
               // 'href: null' değeri profil sekmesinin fiziksel bir sekme butonu (tab icon) oluşturmasını engeller.
               // Bu sayede profile sadece uygulama içerisindeki bir Header yönlendirmesinden (router.push) girilebilir ve normal bir stack sayfasıymış gibi tepki verir.
+              href: null,
+            }}
+          />
+
+          {/* ── Mantıksal Stack Ekranı: Sepet (sekmede gizli) ───────────────── */}
+          <Tabs.Screen
+            name="cart"
+            options={{
+              title: "Sepet",
               href: null,
             }}
           />
