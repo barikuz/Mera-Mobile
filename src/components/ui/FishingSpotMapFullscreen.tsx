@@ -23,6 +23,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import type { Region } from "react-native-maps";
 import MapView, { Callout, Circle, Marker } from "react-native-maps";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -30,7 +31,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "@/constants/color";
 import { MAP_INITIAL_REGION } from "@/constants/map";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useFishingSpots, FishingSpot } from "@/hooks/useFishingSpots";
+import { FishingSpot, useFishingSpots } from "@/hooks/useFishingSpots";
 import SpotInfoCard from "./SpotInfoCard";
 import WeatherCard from "./WeatherCard";
 
@@ -48,6 +49,7 @@ interface FishingSpotMapFullscreenProps {
   animatedOverlayStyle: StyleProp<ViewStyle>;
   animatedMapStyle: StyleProp<ViewStyle>;
   animatedBackButtonStyle: StyleProp<ViewStyle>;
+  initialRegion?: Region;
 }
 
 export default function FishingSpotMapFullscreen({
@@ -56,6 +58,7 @@ export default function FishingSpotMapFullscreen({
   animatedOverlayStyle,
   animatedMapStyle,
   animatedBackButtonStyle,
+  initialRegion,
 }: FishingSpotMapFullscreenProps) {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
@@ -76,8 +79,8 @@ export default function FishingSpotMapFullscreen({
     colorScheme === "dark"
       ? COLORS.dark.iconInactive
       : COLORS.light.iconInactive;
-  const textPrimary =
-    colorScheme === "dark" ? "#F8FAFC" : "#192655";
+  const textPrimary = colorScheme === "dark" ? "#F8FAFC" : "#192655";
+  const resolvedRegion = initialRegion ?? MAP_INITIAL_REGION;
 
   // useFishingSpots hook'u: Backend'den balıkçılık noktalarını fetch eder
   // spots: FishingSpot[], loading: boolean, error: string | null, refetch: () => void
@@ -153,9 +156,16 @@ export default function FishingSpotMapFullscreen({
         onRequestClose={onClose}
       >
         <Animated.View style={[styles.container, animatedOverlayStyle]}>
-          <View style={[styles.centerContent, { backgroundColor: calloutBackground }]}>
+          <View
+            style={[
+              styles.centerContent,
+              { backgroundColor: calloutBackground },
+            ]}
+          >
             <ActivityIndicator size="large" color={accentColor} />
-            <Text style={[styles.loadingText, { color: textPrimary }]}>Meralar yükleniyor...</Text>
+            <Text style={[styles.loadingText, { color: textPrimary }]}>
+              Meralar yükleniyor...
+            </Text>
           </View>
 
           <Animated.View
@@ -190,9 +200,16 @@ export default function FishingSpotMapFullscreen({
         onRequestClose={onClose}
       >
         <Animated.View style={[styles.container, animatedOverlayStyle]}>
-          <View style={[styles.centerContent, { backgroundColor: calloutBackground }]}>
+          <View
+            style={[
+              styles.centerContent,
+              { backgroundColor: calloutBackground },
+            ]}
+          >
             <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-            <Text style={[styles.errorText, { color: textPrimary }]}>{error}</Text>
+            <Text style={[styles.errorText, { color: textPrimary }]}>
+              {error}
+            </Text>
           </View>
 
           <Animated.View
@@ -228,8 +245,9 @@ export default function FishingSpotMapFullscreen({
       <Animated.View style={[styles.container, animatedOverlayStyle]}>
         <Animated.View style={[styles.mapContainer, animatedMapStyle]}>
           <MapView
+            key={`${resolvedRegion.latitude}-${resolvedRegion.longitude}`}
             style={styles.fullscreenMap}
-            initialRegion={MAP_INITIAL_REGION}
+            initialRegion={resolvedRegion}
             showsUserLocation={true}
             showsMyLocationButton={false}
           >
@@ -296,7 +314,9 @@ export default function FishingSpotMapFullscreen({
             isWeatherLoading={isWeatherLoading}
             weatherError={weatherError}
             onClose={handleCloseWeatherCard}
-            onRetry={() => fetchWeather(selectedSpot.center_lat, selectedSpot.center_lng)}
+            onRetry={() =>
+              fetchWeather(selectedSpot.center_lat, selectedSpot.center_lng)
+            }
             bottomInset={insets.bottom}
             accentColor={accentColor}
             backgroundColor={calloutBackground}

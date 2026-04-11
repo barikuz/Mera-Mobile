@@ -5,7 +5,7 @@
  */
 import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import MapView from "react-native-maps";
+import MapView, { type Region } from "react-native-maps";
 
 import { MAP_INITIAL_REGION } from "@/constants/map";
 
@@ -43,13 +43,16 @@ function useTapDetection(onTap: () => void, threshold: number = 10) {
 
 interface FishingSpotMapPreviewProps {
   onPress: () => void;
+  initialRegion?: Region;
 }
 
 export default function FishingSpotMapPreview({
   onPress,
+  initialRegion,
 }: FishingSpotMapPreviewProps) {
   // Tap/drag detection hook'unu kullan
   const { handlePressIn, handlePressOut } = useTapDetection(onPress, 10);
+  const resolvedRegion = initialRegion ?? MAP_INITIAL_REGION;
 
   return (
     <TouchableOpacity
@@ -60,8 +63,9 @@ export default function FishingSpotMapPreview({
     >
       <View style={styles.container}>
         <MapView
+          key={`${resolvedRegion.latitude}-${resolvedRegion.longitude}`}
           style={styles.map}
-          initialRegion={MAP_INITIAL_REGION}
+          initialRegion={resolvedRegion}
           showsUserLocation={true}
           showsMyLocationButton={false}
         />

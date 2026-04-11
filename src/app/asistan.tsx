@@ -6,14 +6,18 @@ import FishingSpotMapPreview from "@/components/ui/FishingSpotMapPreview";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
+import { getMapInitialRegion } from "@/constants/map";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
+import { useLocation } from "@/hooks/useLocation";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 export default function AsistanScreen() {
   const colorScheme = useColorScheme();
   const accentColor =
     colorScheme === "dark" ? COLORS.dark.iconActive : COLORS.light.iconActive;
+  const { coords } = useLocation();
+  const initialRegion = getMapInitialRegion(coords);
 
   const {
     isExpanded,
@@ -43,12 +47,13 @@ export default function AsistanScreen() {
           keşfedin ve yeni meralar bulun.
         </Typography>
 
-        <FishingSpotMapPreview onPress={expand} />
+        <FishingSpotMapPreview onPress={expand} initialRegion={initialRegion} />
       </View>
 
       <FishingSpotMapFullscreen
         visible={isExpanded}
         onClose={collapse}
+        initialRegion={initialRegion}
         animatedOverlayStyle={animatedOverlayStyle}
         animatedMapStyle={animatedMapStyle}
         animatedBackButtonStyle={animatedBackButtonStyle}
