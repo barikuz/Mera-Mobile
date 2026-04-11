@@ -48,6 +48,7 @@ export default function ShopScreen() {
 
   // Sepete ekleme işlevi
   const handleAddToCart = (product: Product) => {
+    // Shop ürün şemasını CartStore'un beklediği alan adlarına burada dönüştürüyoruz.
     addToCart({
       productId: product.id,
       productName: product.name,

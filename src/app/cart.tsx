@@ -29,6 +29,7 @@ export default function CartScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const scheme = colorScheme === "dark" ? "dark" : "light";
+  // iconActive token'ı light modda primary, dark modda accent davranışını tek noktadan sağlar.
   const themeColors = COLORS[scheme];
   const { items, totalPrice, updateQuantity, removeFromCart } = useCartStore();
 
@@ -69,6 +70,7 @@ export default function CartScreen() {
         data={items}
         keyExtractor={(item) => item.productId}
         showsVerticalScrollIndicator={false}
+        // Sabit konumlu alt ödeme barı içerik üzerine binmesin diye ekstra alt boşluk bırakılır.
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 160 }}
         ItemSeparatorComponent={() => <View className="h-3" />}
         renderItem={({ item }) => (

@@ -119,6 +119,7 @@ export default function TabLayout() {
         <Tabs
           screenOptions={({ route }) => ({
             // Her sekmenin üst kısmında paylaşılan (shared) Header bileşenini kullanmasını belirleriz
+            // Sepet ikonu yalnızca mağaza ekranında gösterilir; diğer ekranlarda başlık dengesi korunur.
             header: () => <Header showCartButton={route.name === "shop"} />,
 
             // ── Sekme Çubuğu (Tab Bar) Konteyner Stil Ayarları ────────────────────
