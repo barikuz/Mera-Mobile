@@ -11,8 +11,11 @@ import ScreenContainer from "@/components/ui/ScreenContainer";
 import SearchBar from "@/components/ui/SearchBar";
 import Typography from "@/components/ui/Typography";
 import { useCategories, useProducts } from "@/hooks/useShop";
+import { useCartStore } from "@/store/useCartStore";
 
 export default function ShopScreen() {
+  const addToCart = useCartStore((state) => state.addToCart);
+
   // Arama sorgusu state'i
   const [searchQuery, setSearchQuery] = useState("");
   // Seçili kategori state'i (null = Tümü)
@@ -43,8 +46,15 @@ export default function ShopScreen() {
 
   const isLoading = isCategoriesLoading || isProductsLoading;
 
-  // Sepete ekleme işlevi (şimdilik sadece bildirim)
+  // Sepete ekleme işlevi
   const handleAddToCart = (product: Product) => {
+    addToCart({
+      productId: product.id,
+      productName: product.name,
+      price: product.price,
+      imageUrl: product.image_url,
+    });
+
     Alert.alert("Sepete Eklendi", `${product.name} sepetinize eklendi.`);
   };
 

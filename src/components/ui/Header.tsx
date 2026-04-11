@@ -1,5 +1,5 @@
 import { COLORS } from "@/constants/color";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
@@ -16,9 +16,14 @@ import { supabase } from "../../../lib/supabase";
 interface HeaderProps {
   // Kullanıcının profil resminin URL'si (varsa). İsteğe bağlı (optional).
   avatarUrl?: string | null;
+  // Sadece belirli ekranlarda solda sepet butonu göstermek için kullanılır.
+  showCartButton?: boolean;
 }
 
-export default function Header({ avatarUrl: propAvatarUrl }: HeaderProps) {
+export default function Header({
+  avatarUrl: propAvatarUrl,
+  showCartButton = false,
+}: HeaderProps) {
   // Cihazın durum çubuğu/çentik (notch) gibi güvenli alanlarının ölçülerini alır
   const insets = useSafeAreaInsets();
 
@@ -73,7 +78,21 @@ export default function Header({ avatarUrl: propAvatarUrl }: HeaderProps) {
           "Mera" başlığının tam ortalanabilmesi için sağdaki profil butonunun (40x40) hizasal ağırlığını
           hesaba katarak solda görünmez bir denge unsuru oluşturur (w-10 h-10 = 40x40 piksel).
         */}
-        <View className="w-10 h-10" />
+        {showCartButton ? (
+          <TouchableOpacity
+            onPress={() => router.push("/cart")}
+            className="w-10 h-10 items-center justify-center"
+            activeOpacity={0.7}
+          >
+            <MaterialIcons
+              name="shopping-basket"
+              size={24}
+              color={themeColors.iconActive}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View className="w-10 h-10" />
+        )}
 
         {/* 
           Ortalanmış Başlık (Center Title): 
