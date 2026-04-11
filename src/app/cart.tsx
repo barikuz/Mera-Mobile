@@ -37,7 +37,7 @@ export default function CartScreen() {
     return (
       <ScreenContainer>
         <View className="flex-1 items-center justify-center px-6">
-          <View className="w-full items-center px-6 py-8 dark:border-mera-neutral-800 dark:bg-mera-neutral-900">
+          <View className="w-full items-center px-6 py-8">
             <MaterialCommunityIcons
               name="shopping-outline"
               size={44}
