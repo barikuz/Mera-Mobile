@@ -41,7 +41,7 @@ export default function ProductCard({
 
   return (
     <View
-      className="bg-white dark:bg-mera-neutral-900 rounded-2xl overflow-hidden shadow shadow-black/10"
+      className="bg-white dark:bg-mera-neutral-800 rounded-2xl overflow-hidden shadow shadow-black/10"
       style={{ width: "48%" }}
     >
       {/* Ürün Görseli */}
