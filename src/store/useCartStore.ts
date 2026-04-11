@@ -21,6 +21,7 @@ interface CartState {
 }
 
 const calculateTotals = (items: CartItem[]) => {
+  // Toplamlar store içinde tutuluyor; böylece UI tarafında tekrar reduce çalıştırmaya gerek kalmıyor.
   const totalPrice = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -43,6 +44,7 @@ export const useCartStore = create<CartState>()(
             (cartItem) => cartItem.productId === item.productId,
           );
 
+          // Aynı ürün tekrar eklenirse yeni satır açmak yerine adet artırılır.
           const items = existingItem
             ? state.items.map((cartItem) =>
                 cartItem.productId === item.productId
@@ -94,6 +96,7 @@ export const useCartStore = create<CartState>()(
     {
       name: "mera-cart-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      // Kalıcı depoya yalnızca temel veri yazılır; türetilmiş alanlar tekrar hesaplanır.
       partialize: (state) => ({
         items: state.items,
       }),
@@ -102,6 +105,7 @@ export const useCartStore = create<CartState>()(
           return;
         }
 
+        // Uygulama yeniden açıldığında toplamlar depodan değil items dizisinden türetilir.
         const { totalPrice, totalItemCount } = calculateTotals(state.items);
         state.totalPrice = totalPrice;
         state.totalItemCount = totalItemCount;
