@@ -154,7 +154,7 @@ export default function CartScreen() {
             {currencyFormatter.format(totalPrice)}
           </Typography>
         </View>
-        <Button title="Ödemeye Geç" onPress={() => {}} />
+        <Button title="Ödemeye Geç" onPress={() => router.push("/checkout")} />
       </View>
     </ScreenContainer>
   );
