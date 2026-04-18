@@ -1,14 +1,14 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    useColorScheme,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  useColorScheme,
+  View,
 } from "react-native";
 
 import Button from "@/components/ui/Button";
@@ -43,15 +43,46 @@ export default function CheckoutScreen() {
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const { useAuthStore } = await import("@/store/useAuthStore");
+      const token = useAuthStore.getState().session?.access_token;
+
+      if (!token) {
+        Alert.alert(
+          "Oturum Hatası",
+          "Sipariş verebilmek için lütfen giriş yapın.",
+        );
+        return;
+      }
+
+      const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || "";
+      const payload = {
+        shippingName: fullName.trim(),
+        shippingPhone: phoneNumber.trim(),
+        shippingAddress: address.trim(),
+        items: items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      };
+
+      const response = await fetch(`${baseUrl}/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       clearCart();
-      Alert.alert("Siparişiniz Başarıyla Alındı!");
+      Alert.alert("Siparişiniz Alındı");
       router.replace("/");
     } catch (error) {
-      Alert.alert(
-        "Hata",
-        "Sipariş tamamlanırken beklenmedik bir sorun oluştu.",
-      );
+      Alert.alert("Hata", "Siparişiniz alınamadı. Lütfen tekrar deneyin.");
     } finally {
       setIsLoading(false);
     }
