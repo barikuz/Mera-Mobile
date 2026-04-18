@@ -32,12 +32,22 @@ export default function CheckoutScreen() {
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
+  const [cardHolderName, setCardHolderName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expireMonth, setExpireMonth] = useState("");
+  const [expireYear, setExpireYear] = useState("");
+  const [cvc, setCvc] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const isFormComplete =
     fullName.trim().length > 0 &&
     phoneNumber.trim().length > 0 &&
-    address.trim().length > 0;
+    address.trim().length > 0 &&
+    cardHolderName.trim().length > 0 &&
+    cardNumber.trim().length > 0 &&
+    expireMonth.trim().length > 0 &&
+    expireYear.trim().length > 0 &&
+    cvc.trim().length > 0;
 
   const handleCheckout = async () => {
     setIsLoading(true);
@@ -59,6 +69,13 @@ export default function CheckoutScreen() {
         shippingName: fullName.trim(),
         shippingPhone: phoneNumber.trim(),
         shippingAddress: address.trim(),
+        paymentCard: {
+          cardHolderName: cardHolderName.trim(),
+          cardNumber: cardNumber.trim(),
+          expireMonth: expireMonth.trim(),
+          expireYear: expireYear.trim(),
+          cvc: cvc.trim(),
+        },
         items: items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -75,14 +92,47 @@ export default function CheckoutScreen() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        let backendMessage = "";
+
+        try {
+          const text = await response.text();
+          if (text) {
+            try {
+              const data = JSON.parse(text);
+              if (typeof data?.message === "string") {
+                backendMessage = data.message;
+              } else {
+                backendMessage = text;
+              }
+            } catch {
+              backendMessage = text;
+            }
+          }
+        } catch {
+          backendMessage = "";
+        }
+
+        throw new Error(backendMessage || `HTTP ${response.status}`);
       }
 
       clearCart();
       Alert.alert("Siparişiniz Alındı");
       router.replace("/");
     } catch (error) {
-      Alert.alert("Hata", "Siparişiniz alınamadı. Lütfen tekrar deneyin.");
+      const errorMessage = error instanceof Error ? error.message : "";
+      const lowerMessage = errorMessage.toLocaleLowerCase("tr-TR");
+      const isPaymentError =
+        lowerMessage.includes("kart") ||
+        lowerMessage.includes("cvc") ||
+        lowerMessage.includes("ödeme") ||
+        lowerMessage.includes("odeme") ||
+        lowerMessage.includes("payment");
+
+      if (isPaymentError && errorMessage) {
+        Alert.alert("Ödeme Hatası", errorMessage);
+      } else {
+        Alert.alert("Hata", "Siparişiniz alınamadı. Lütfen tekrar deneyin.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -191,6 +241,87 @@ export default function CheckoutScreen() {
                 className="min-h-32 rounded-lg border border-mera-neutral-200 bg-mera-neutral-100 px-3 py-3 text-base font-inter text-mera-neutral-900 dark:border-mera-neutral-700 dark:bg-mera-neutral-900 dark:text-white"
                 multiline
                 textAlignVertical="top"
+              />
+            </View>
+          </View>
+
+          <View className="mt-4 rounded-2xl bg-white p-4 dark:bg-mera-neutral-800">
+            <Typography variant="h2" className="mb-4">
+              Ödeme Bilgileri
+            </Typography>
+
+            <View className="mb-4">
+              <Text className="mb-1 text-sm font-inter-semibold text-mera-neutral-900 dark:text-white">
+                Kart Sahibinin Adı
+              </Text>
+              <TextInput
+                value={cardHolderName}
+                onChangeText={setCardHolderName}
+                placeholder="Kart üzerindeki adı girin"
+                placeholderTextColor={themeColors.iconInactive}
+                className="rounded-lg border border-mera-neutral-200 bg-mera-neutral-100 px-3 py-3 text-base font-inter text-mera-neutral-900 dark:border-mera-neutral-700 dark:bg-mera-neutral-900 dark:text-white"
+                autoCapitalize="words"
+              />
+            </View>
+
+            <View className="mb-4">
+              <Text className="mb-1 text-sm font-inter-semibold text-mera-neutral-900 dark:text-white">
+                Kart Numarası
+              </Text>
+              <TextInput
+                value={cardNumber}
+                onChangeText={setCardNumber}
+                placeholder="16 haneli kart numarası"
+                placeholderTextColor={themeColors.iconInactive}
+                className="rounded-lg border border-mera-neutral-200 bg-mera-neutral-100 px-3 py-3 text-base font-inter text-mera-neutral-900 dark:border-mera-neutral-700 dark:bg-mera-neutral-900 dark:text-white"
+                keyboardType="numeric"
+                maxLength={16}
+              />
+            </View>
+
+            <View className="mb-4">
+              <Text className="mb-1 text-sm font-inter-semibold text-mera-neutral-900 dark:text-white">
+                Son Kullanma Ay
+              </Text>
+              <TextInput
+                value={expireMonth}
+                onChangeText={setExpireMonth}
+                placeholder="AA"
+                placeholderTextColor={themeColors.iconInactive}
+                className="rounded-lg border border-mera-neutral-200 bg-mera-neutral-100 px-3 py-3 text-base font-inter text-mera-neutral-900 dark:border-mera-neutral-700 dark:bg-mera-neutral-900 dark:text-white"
+                keyboardType="numeric"
+                maxLength={2}
+              />
+            </View>
+
+            <View className="mb-4">
+              <Text className="mb-1 text-sm font-inter-semibold text-mera-neutral-900 dark:text-white">
+                Son Kullanma Yıl
+              </Text>
+              <TextInput
+                value={expireYear}
+                onChangeText={setExpireYear}
+                placeholder="YYYY"
+                placeholderTextColor={themeColors.iconInactive}
+                className="rounded-lg border border-mera-neutral-200 bg-mera-neutral-100 px-3 py-3 text-base font-inter text-mera-neutral-900 dark:border-mera-neutral-700 dark:bg-mera-neutral-900 dark:text-white"
+                keyboardType="numeric"
+                maxLength={4}
+              />
+            </View>
+
+            <View>
+              <Text className="mb-1 text-sm font-inter-semibold text-mera-neutral-900 dark:text-white">
+                CVC
+              </Text>
+              <TextInput
+                value={cvc}
+                onChangeText={setCvc}
+                placeholder="***"
+                placeholderTextColor={themeColors.iconInactive}
+                className="rounded-lg border border-mera-neutral-200 bg-mera-neutral-100 px-3 py-3 text-base font-inter text-mera-neutral-900 dark:border-mera-neutral-700 dark:bg-mera-neutral-900 dark:text-white"
+                keyboardType="numeric"
+                maxLength={3}
+                secureTextEntry
               />
             </View>
           </View>
