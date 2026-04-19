@@ -23,7 +23,9 @@ interface UseFishingSpotsReturn {
   refetch: () => void;
 }
 
-export function useFishingSpots(): UseFishingSpotsReturn {
+export function useFishingSpots(
+  enabled: boolean = true,
+): UseFishingSpotsReturn {
   const [spots, setSpots] = useState<FishingSpot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +38,13 @@ export function useFishingSpots(): UseFishingSpotsReturn {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setSpots([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     let isMounted = true;
 
     async function fetchSpots() {
@@ -76,7 +85,7 @@ export function useFishingSpots(): UseFishingSpotsReturn {
     return () => {
       isMounted = false;
     };
-  }, [fetchTrigger]);
+  }, [enabled, fetchTrigger]);
 
   return { spots, loading, error, refetch };
 }

@@ -135,8 +135,13 @@ export default function ProfileScreen() {
         </Typography>
       </View>
 
-      {/* Çıkış Yap Butonu */}
-      <View className="pb-4">
+      {/* Profil Aksiyonları */}
+      <View className="gap-3 pb-4">
+        <Button
+          title="Av Kaydı Ekle"
+          onPress={() => router.push("/add-catch")}
+        />
+
         <Button
           variant="secondary"
           title="Çıkış Yap"

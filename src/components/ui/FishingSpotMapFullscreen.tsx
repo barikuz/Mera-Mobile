@@ -12,6 +12,7 @@
  * - Loading ve error state'leri için ayrı render'lar
  */
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,14 +24,19 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import MapView, { Callout, Circle, Marker } from "react-native-maps";
+import MapView, {
+  Callout,
+  Circle,
+  MapPressEvent,
+  Marker,
+} from "react-native-maps";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { COLORS } from "@/constants/color";
 import { MAP_INITIAL_REGION } from "@/constants/map";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useFishingSpots, FishingSpot } from "@/hooks/useFishingSpots";
+import { FishingSpot, useFishingSpots } from "@/hooks/useFishingSpots";
 import SpotInfoCard from "./SpotInfoCard";
 import WeatherCard from "./WeatherCard";
 
@@ -45,20 +51,35 @@ import WeatherCard from "./WeatherCard";
 interface FishingSpotMapFullscreenProps {
   visible: boolean;
   onClose: () => void;
+  onConfirmSelection?: () => void;
   animatedOverlayStyle: StyleProp<ViewStyle>;
   animatedMapStyle: StyleProp<ViewStyle>;
   animatedBackButtonStyle: StyleProp<ViewStyle>;
+  mode?: "spots" | "coordinate";
+  selectedCoordinate?: {
+    latitude: number;
+    longitude: number;
+  } | null;
+  onCoordinateSelect?: (coordinate: {
+    latitude: number;
+    longitude: number;
+  }) => void;
 }
 
 export default function FishingSpotMapFullscreen({
   visible,
   onClose,
+  onConfirmSelection,
   animatedOverlayStyle,
   animatedMapStyle,
   animatedBackButtonStyle,
+  mode = "spots",
+  selectedCoordinate = null,
+  onCoordinateSelect,
 }: FishingSpotMapFullscreenProps) {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
+  const isCoordinateMode = mode === "coordinate";
 
   // Tema renklerini belirle: Dark/light mode'a göre accent, callout ve text renkleri
   // Bu renkler Marker callout'ları ve WeatherCard için kullanılır
@@ -76,12 +97,11 @@ export default function FishingSpotMapFullscreen({
     colorScheme === "dark"
       ? COLORS.dark.iconInactive
       : COLORS.light.iconInactive;
-  const textPrimary =
-    colorScheme === "dark" ? "#F8FAFC" : "#192655";
+  const textPrimary = colorScheme === "dark" ? "#F8FAFC" : "#192655";
 
   // useFishingSpots hook'u: Backend'den balıkçılık noktalarını fetch eder
   // spots: FishingSpot[], loading: boolean, error: string | null, refetch: () => void
-  const { spots, loading, error, refetch } = useFishingSpots();
+  const { spots, loading, error, refetch } = useFishingSpots(!isCoordinateMode);
 
   // Hava durumu kartı için state'ler
   // selectedSpot: Kullanıcının tıkladığı marker'ı tutar
@@ -94,6 +114,8 @@ export default function FishingSpotMapFullscreen({
   } | null>(null);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [isLocatingCurrentPosition, setIsLocatingCurrentPosition] =
+    useState(false);
 
   // Custom backend'den hava durumu verisini fetch eder
   // API endpoint: /weather?lat={lat}&lon={lon}
@@ -130,19 +152,53 @@ export default function FishingSpotMapFullscreen({
     setWeatherError(null);
   };
 
+  const handleMapPress = (event: MapPressEvent) => {
+    if (!isCoordinateMode || !onCoordinateSelect) {
+      return;
+    }
+
+    onCoordinateSelect(event.nativeEvent.coordinate);
+  };
+
+  const handleUseCurrentLocation = async () => {
+    if (!isCoordinateMode || !onCoordinateSelect) {
+      return;
+    }
+
+    setIsLocatingCurrentPosition(true);
+
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (permission.status !== "granted") {
+        return;
+      }
+
+      const currentPosition = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      onCoordinateSelect({
+        latitude: currentPosition.coords.latitude,
+        longitude: currentPosition.coords.longitude,
+      });
+    } finally {
+      setIsLocatingCurrentPosition(false);
+    }
+  };
+
   // Modal her görünür olduğunda fishing spots verisini yeniden fetch eder
   // Modal kapandığında weather kartı state'ini temizler
   useEffect(() => {
-    if (visible) {
+    if (visible && !isCoordinateMode) {
       refetch();
     } else {
       // Modal kapandığında state'leri sıfırla
       handleCloseWeatherCard();
     }
-  }, [visible, refetch]);
+  }, [visible, refetch, isCoordinateMode]);
 
   // Loading durumu render'ı: Veriler yüklenirken spinner gösterilir
-  if (loading) {
+  if (!isCoordinateMode && loading) {
     return (
       <Modal
         visible={visible}
@@ -153,9 +209,16 @@ export default function FishingSpotMapFullscreen({
         onRequestClose={onClose}
       >
         <Animated.View style={[styles.container, animatedOverlayStyle]}>
-          <View style={[styles.centerContent, { backgroundColor: calloutBackground }]}>
+          <View
+            style={[
+              styles.centerContent,
+              { backgroundColor: calloutBackground },
+            ]}
+          >
             <ActivityIndicator size="large" color={accentColor} />
-            <Text style={[styles.loadingText, { color: textPrimary }]}>Meralar yükleniyor...</Text>
+            <Text style={[styles.loadingText, { color: textPrimary }]}>
+              Meralar yükleniyor...
+            </Text>
           </View>
 
           <Animated.View
@@ -179,7 +242,7 @@ export default function FishingSpotMapFullscreen({
   }
 
   // Hata durumu render'ı: API hatası olduğunda error mesajı gösterilir
-  if (error) {
+  if (!isCoordinateMode && error) {
     return (
       <Modal
         visible={visible}
@@ -190,9 +253,16 @@ export default function FishingSpotMapFullscreen({
         onRequestClose={onClose}
       >
         <Animated.View style={[styles.container, animatedOverlayStyle]}>
-          <View style={[styles.centerContent, { backgroundColor: calloutBackground }]}>
+          <View
+            style={[
+              styles.centerContent,
+              { backgroundColor: calloutBackground },
+            ]}
+          >
             <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-            <Text style={[styles.errorText, { color: textPrimary }]}>{error}</Text>
+            <Text style={[styles.errorText, { color: textPrimary }]}>
+              {error}
+            </Text>
           </View>
 
           <Animated.View
@@ -232,43 +302,50 @@ export default function FishingSpotMapFullscreen({
             initialRegion={MAP_INITIAL_REGION}
             showsUserLocation={true}
             showsMyLocationButton={false}
+            onPress={isCoordinateMode ? handleMapPress : undefined}
           >
             {/* Her fishing spot için Marker ve Circle overlay render edilir.
                 Fragment kullanılmasının sebebi: Aynı key ile birden fazla element döndürmek */}
-            {spots.map((spot) => (
-              <React.Fragment key={spot.id}>
-                <Marker
-                  coordinate={{
-                    latitude: spot.center_lat,
-                    longitude: spot.center_lng,
-                  }}
-                  title={spot.name}
-                  description={spot.water_type}
-                  pinColor={accentColor}
-                  onPress={() => handleMarkerPress(spot)}
-                >
-                  <Callout tooltip>
-                    <SpotInfoCard
-                      spot={spot}
-                      accentColor={accentColor}
-                      backgroundColor={calloutBackground}
-                      borderColor={calloutBorder}
-                      secondaryTextColor={calloutSecondaryText}
+            {!isCoordinateMode
+              ? spots.map((spot) => (
+                  <React.Fragment key={spot.id}>
+                    <Marker
+                      coordinate={{
+                        latitude: spot.center_lat,
+                        longitude: spot.center_lng,
+                      }}
+                      title={spot.name}
+                      description={spot.water_type}
+                      pinColor={accentColor}
+                      onPress={() => handleMarkerPress(spot)}
+                    >
+                      <Callout tooltip>
+                        <SpotInfoCard
+                          spot={spot}
+                          accentColor={accentColor}
+                          backgroundColor={calloutBackground}
+                          borderColor={calloutBorder}
+                          secondaryTextColor={calloutSecondaryText}
+                        />
+                      </Callout>
+                    </Marker>
+                    <Circle
+                      center={{
+                        latitude: spot.center_lat,
+                        longitude: spot.center_lng,
+                      }}
+                      radius={spot.radius_meters || 500}
+                      fillColor={`${accentColor}33`}
+                      strokeColor={`${accentColor}CC`}
+                      strokeWidth={2}
                     />
-                  </Callout>
-                </Marker>
-                <Circle
-                  center={{
-                    latitude: spot.center_lat,
-                    longitude: spot.center_lng,
-                  }}
-                  radius={spot.radius_meters || 500}
-                  fillColor={`${accentColor}33`}
-                  strokeColor={`${accentColor}CC`}
-                  strokeWidth={2}
-                />
-              </React.Fragment>
-            ))}
+                  </React.Fragment>
+                ))
+              : null}
+
+            {isCoordinateMode && selectedCoordinate ? (
+              <Marker coordinate={selectedCoordinate} pinColor={accentColor} />
+            ) : null}
           </MapView>
         </Animated.View>
 
@@ -288,15 +365,106 @@ export default function FishingSpotMapFullscreen({
           </TouchableOpacity>
         </Animated.View>
 
+        {isCoordinateMode ? (
+          <View
+            style={[styles.currentLocationContainer, { top: insets.top + 12 }]}
+          >
+            <TouchableOpacity
+              onPress={handleUseCurrentLocation}
+              style={[
+                styles.currentLocationButton,
+                {
+                  backgroundColor: calloutBackground,
+                  borderColor: calloutBorder,
+                },
+              ]}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="navigate"
+                size={20}
+                color={
+                  isLocatingCurrentPosition ? calloutSecondaryText : accentColor
+                }
+              />
+              <Text
+                style={[
+                  styles.currentLocationButtonText,
+                  { color: textPrimary },
+                ]}
+              >
+                {isLocatingCurrentPosition
+                  ? "Konum Alınıyor"
+                  : "Konumumu Kullan"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {isCoordinateMode ? (
+          <View
+            style={[styles.saveButtonContainer, { bottom: insets.bottom + 96 }]}
+          >
+            <TouchableOpacity
+              onPress={onConfirmSelection}
+              style={[
+                styles.saveButton,
+                {
+                  backgroundColor: selectedCoordinate
+                    ? accentColor
+                    : calloutBackground,
+                  borderColor: selectedCoordinate ? accentColor : calloutBorder,
+                },
+              ]}
+              activeOpacity={0.8}
+              disabled={!selectedCoordinate || !onConfirmSelection}
+            >
+              <Text
+                style={[
+                  styles.saveButtonText,
+                  {
+                    color: selectedCoordinate
+                      ? colorScheme === "dark"
+                        ? COLORS.dark.tabBarBackground
+                        : COLORS.light.tabBarBackground
+                      : calloutSecondaryText,
+                  },
+                ]}
+              >
+                Kaydet
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {isCoordinateMode ? (
+          <View
+            style={[
+              styles.selectionHintContainer,
+              {
+                backgroundColor: calloutBackground,
+                borderColor: calloutBorder,
+                bottom: insets.bottom + 24,
+              },
+            ]}
+          >
+            <Text style={[styles.selectionHintText, { color: textPrimary }]}>
+              Haritada bir noktaya dokunun ya da mevcut konumunuzu kullanın.
+            </Text>
+          </View>
+        ) : null}
+
         {/* Seçili nokta için hava durumu kartı. Marker'a tıklandığında görünür olur */}
-        {selectedSpot && (
+        {!isCoordinateMode && selectedSpot && (
           <WeatherCard
             selectedSpot={selectedSpot}
             weatherData={weatherData}
             isWeatherLoading={isWeatherLoading}
             weatherError={weatherError}
             onClose={handleCloseWeatherCard}
-            onRetry={() => fetchWeather(selectedSpot.center_lat, selectedSpot.center_lng)}
+            onRetry={() =>
+              fetchWeather(selectedSpot.center_lat, selectedSpot.center_lng)
+            }
             bottomInset={insets.bottom}
             accentColor={accentColor}
             backgroundColor={calloutBackground}
@@ -327,6 +495,17 @@ const styles = StyleSheet.create({
     left: 16,
     zIndex: 1001,
   },
+  currentLocationContainer: {
+    position: "absolute",
+    right: 16,
+    zIndex: 1001,
+  },
+  saveButtonContainer: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    zIndex: 1002,
+  },
   backButton: {
     width: 44,
     height: 44,
@@ -334,6 +513,45 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  currentLocationButton: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  currentLocationButtonText: {
+    fontSize: 14,
+    fontFamily: "Inter-SemiBold",
+  },
+  saveButton: {
+    minHeight: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontFamily: "Inter-SemiBold",
+  },
+  selectionHintContainer: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  selectionHintText: {
+    fontSize: 14,
+    textAlign: "center",
+    fontFamily: "Inter-Regular",
   },
   centerContent: {
     flex: 1,
