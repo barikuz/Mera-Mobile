@@ -1,15 +1,18 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
-import Button from "@/components/ui/Button";
 import FishingSpotMapFullscreen from "@/components/ui/FishingSpotMapFullscreen";
 import Input from "@/components/ui/Input";
 import ScreenContainer from "@/components/ui/ScreenContainer";
@@ -17,6 +20,7 @@ import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const SPECIES_OPTIONS = [
   "Levrek",
@@ -28,6 +32,72 @@ const SPECIES_OPTIONS = [
 ] as const;
 
 type SpeciesOption = (typeof SPECIES_OPTIONS)[number];
+
+type CreateCatchPayload = {
+  species: string;
+  weight_kg: number | null;
+  length_cm: number | null;
+  location_lat: number | null;
+  location_lng: number | null;
+};
+
+type CatchResponse = Record<string, unknown> | null;
+
+async function createCatch(
+  payload: CreateCatchPayload,
+): Promise<CatchResponse> {
+  const token = useAuthStore.getState().session?.access_token;
+
+  if (!token) {
+    throw new Error("Oturum hatası. Lütfen giriş yapın.");
+  }
+
+  const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || "";
+  const response = await fetch(`${baseUrl}/catches`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      species: payload.species,
+      weight_kg: payload.weight_kg,
+      length_cm: payload.length_cm,
+      location_lat: payload.location_lat,
+      location_lng: payload.location_lng,
+    }),
+  });
+
+  if (!response.ok) {
+    let backendMessage = "";
+
+    try {
+      const text = await response.text();
+      if (text) {
+        try {
+          const data = JSON.parse(text);
+          if (typeof data?.message === "string") {
+            backendMessage = data.message;
+          } else {
+            backendMessage = text;
+          }
+        } catch {
+          backendMessage = text;
+        }
+      }
+    } catch {
+      backendMessage = "";
+    }
+
+    throw new Error(backendMessage || `HTTP ${response.status}`);
+  }
+
+  try {
+    return (await response.json()) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 interface StepperFieldProps {
   label: string;
@@ -109,6 +179,8 @@ function StepperField({
 }
 
 export default function AddCatchScreen() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const colorScheme = useColorScheme();
   const scheme = colorScheme === "dark" ? "dark" : "light";
   const themeColors = COLORS[scheme];
@@ -144,6 +216,21 @@ export default function AddCatchScreen() {
   }, [pendingLocationLat, pendingLocationLng]);
 
   const isSpeciesValid = species.trim().length > 0;
+
+  const createCatchMutation = useMutation({
+    mutationFn: createCatch,
+  });
+
+  const resetForm = () => {
+    setSpecies("");
+    setIsOtherSpeciesSelected(false);
+    setWeightKg(null);
+    setLengthCm(null);
+    setLocationLat(null);
+    setLocationLng(null);
+    setPendingLocationLat(null);
+    setPendingLocationLng(null);
+  };
 
   const handleSpeciesSelect = (option: SpeciesOption) => {
     if (option === "Diğer") {
@@ -184,18 +271,44 @@ export default function AddCatchScreen() {
     collapse();
   };
 
-  const handleSave = () => {
-    if (!isSpeciesValid) {
+  const handleSave = async () => {
+    if (!isSpeciesValid || createCatchMutation.isPending) {
       return;
     }
 
-    console.log({
-      species: species.trim(),
-      weight_kg: weightKg,
-      length_cm: lengthCm,
-      location_lat: locationLat,
-      location_lng: locationLng,
-    });
+    try {
+      await createCatchMutation.mutateAsync({
+        species: species.trim(),
+        weight_kg: weightKg,
+        length_cm: lengthCm,
+        location_lat: locationLat,
+        location_lng: locationLng,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["catches"] });
+
+      Alert.alert("Başarılı", "Av kaydı eklendi.");
+
+      let didNavigate = false;
+      try {
+        if (router.canGoBack()) {
+          router.back();
+          didNavigate = true;
+        }
+      } catch {
+        didNavigate = false;
+      }
+
+      if (!didNavigate) {
+        resetForm();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      Alert.alert(
+        "Hata",
+        message || "Av kaydı eklenemedi. Lütfen tekrar deneyin.",
+      );
+    }
   };
 
   return (
@@ -322,11 +435,25 @@ export default function AddCatchScreen() {
       </KeyboardAvoidingView>
 
       <View className="absolute inset-x-0 bottom-0 border-t border-mera-neutral-200 bg-mera-neutral-100 px-4 pb-4 pt-3 dark:border-mera-neutral-500 dark:bg-mera-neutral-950">
-        <Button
-          title="Kaydet"
+        <TouchableOpacity
           onPress={handleSave}
-          disabled={!isSpeciesValid}
-        />
+          disabled={!isSpeciesValid || createCatchMutation.isPending}
+          activeOpacity={0.7}
+          className={`items-center rounded-lg bg-mera-primary py-3 dark:bg-mera-accent ${
+            !isSpeciesValid || createCatchMutation.isPending ? "opacity-50" : ""
+          }`}
+        >
+          {createCatchMutation.isPending ? (
+            <ActivityIndicator
+              size="small"
+              color={scheme === "dark" ? "#111827" : "#FFFFFF"}
+            />
+          ) : (
+            <Text className="text-base font-inter-semibold text-white dark:text-mera-neutral-900">
+              Kaydet
+            </Text>
+          )}
+        </TouchableOpacity>
       </View>
 
       <FishingSpotMapFullscreen
