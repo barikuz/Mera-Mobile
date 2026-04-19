@@ -233,6 +233,14 @@ export default function TabLayout() {
             }}
           />
 
+          <Tabs.Screen
+            name="add-catch"
+            options={{
+              title: "Av Ekle",
+              href: null,
+            }}
+          />
+
           {/* ── Mantıksal Stack Ekranları: Auth ─────────────────────────────── */}
           <Tabs.Screen
             name="login"
