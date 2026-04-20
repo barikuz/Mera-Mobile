@@ -288,20 +288,7 @@ export default function AddCatchScreen() {
       await queryClient.invalidateQueries({ queryKey: ["catches"] });
 
       Alert.alert("Başarılı", "Av kaydı eklendi.");
-
-      let didNavigate = false;
-      try {
-        if (router.canGoBack()) {
-          router.back();
-          didNavigate = true;
-        }
-      } catch {
-        didNavigate = false;
-      }
-
-      if (!didNavigate) {
-        resetForm();
-      }
+      router.replace("/profile");
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       Alert.alert(

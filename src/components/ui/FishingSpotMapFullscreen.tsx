@@ -60,6 +60,7 @@ interface FishingSpotMapFullscreenProps {
     latitude: number;
     longitude: number;
   } | null;
+  readOnlyCoordinate?: boolean;
   onCoordinateSelect?: (coordinate: {
     latitude: number;
     longitude: number;
@@ -75,11 +76,13 @@ export default function FishingSpotMapFullscreen({
   animatedBackButtonStyle,
   mode = "spots",
   selectedCoordinate = null,
+  readOnlyCoordinate = false,
   onCoordinateSelect,
 }: FishingSpotMapFullscreenProps) {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isCoordinateMode = mode === "coordinate";
+  const allowCoordinateSelection = isCoordinateMode && !readOnlyCoordinate;
 
   // Tema renklerini belirle: Dark/light mode'a göre accent, callout ve text renkleri
   // Bu renkler Marker callout'ları ve WeatherCard için kullanılır
@@ -153,7 +156,7 @@ export default function FishingSpotMapFullscreen({
   };
 
   const handleMapPress = (event: MapPressEvent) => {
-    if (!isCoordinateMode || !onCoordinateSelect) {
+    if (!allowCoordinateSelection || !onCoordinateSelect) {
       return;
     }
 
@@ -161,7 +164,7 @@ export default function FishingSpotMapFullscreen({
   };
 
   const handleUseCurrentLocation = async () => {
-    if (!isCoordinateMode || !onCoordinateSelect) {
+    if (!allowCoordinateSelection || !onCoordinateSelect) {
       return;
     }
 
@@ -286,6 +289,15 @@ export default function FishingSpotMapFullscreen({
   }
 
   // Başarılı durum: Harita ve fishing spot marker'ları render edilir
+  const mapInitialRegion = selectedCoordinate
+    ? {
+        latitude: selectedCoordinate.latitude,
+        longitude: selectedCoordinate.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      }
+    : MAP_INITIAL_REGION;
+
   return (
     <Modal
       visible={visible}
@@ -299,10 +311,11 @@ export default function FishingSpotMapFullscreen({
         <Animated.View style={[styles.mapContainer, animatedMapStyle]}>
           <MapView
             style={styles.fullscreenMap}
-            initialRegion={MAP_INITIAL_REGION}
+            initialRegion={mapInitialRegion}
             showsUserLocation={true}
             showsMyLocationButton={false}
-            onPress={isCoordinateMode ? handleMapPress : undefined}
+            toolbarEnabled={false}
+            onPress={allowCoordinateSelection ? handleMapPress : undefined}
           >
             {/* Her fishing spot için Marker ve Circle overlay render edilir.
                 Fragment kullanılmasının sebebi: Aynı key ile birden fazla element döndürmek */}
@@ -365,7 +378,7 @@ export default function FishingSpotMapFullscreen({
           </TouchableOpacity>
         </Animated.View>
 
-        {isCoordinateMode ? (
+        {allowCoordinateSelection ? (
           <View
             style={[styles.currentLocationContainer, { top: insets.top + 12 }]}
           >
@@ -401,7 +414,7 @@ export default function FishingSpotMapFullscreen({
           </View>
         ) : null}
 
-        {isCoordinateMode ? (
+        {allowCoordinateSelection ? (
           <View
             style={[styles.saveButtonContainer, { bottom: insets.bottom + 96 }]}
           >
@@ -437,7 +450,7 @@ export default function FishingSpotMapFullscreen({
           </View>
         ) : null}
 
-        {isCoordinateMode ? (
+        {allowCoordinateSelection ? (
           <View
             style={[
               styles.selectionHintContainer,
