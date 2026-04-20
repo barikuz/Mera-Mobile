@@ -5,7 +5,7 @@
  */
 import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import MapView from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 
 import { MAP_INITIAL_REGION } from "@/constants/map";
 
@@ -43,28 +43,57 @@ function useTapDetection(onTap: () => void, threshold: number = 10) {
 
 interface FishingSpotMapPreviewProps {
   onPress: () => void;
+  selectedCoordinate?: {
+    latitude: number;
+    longitude: number;
+  } | null;
+  containerClassName?: string;
+  showsUserLocation?: boolean;
 }
 
 export default function FishingSpotMapPreview({
   onPress,
+  selectedCoordinate = null,
+  containerClassName = "h-48 rounded-xl overflow-hidden",
+  showsUserLocation = true,
 }: FishingSpotMapPreviewProps) {
   // Tap/drag detection hook'unu kullan
   const { handlePressIn, handlePressOut } = useTapDetection(onPress, 10);
+
+  const initialRegion = selectedCoordinate
+    ? {
+        latitude: selectedCoordinate.latitude,
+        longitude: selectedCoordinate.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      }
+    : MAP_INITIAL_REGION;
 
   return (
     <TouchableOpacity
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       activeOpacity={0.9}
-      className="h-48 rounded-xl overflow-hidden"
+      className={containerClassName}
     >
       <View style={styles.container}>
         <MapView
           style={styles.map}
-          initialRegion={MAP_INITIAL_REGION}
-          showsUserLocation={true}
+          initialRegion={initialRegion}
+          showsUserLocation={showsUserLocation}
           showsMyLocationButton={false}
-        />
+          toolbarEnabled={false}
+          liteMode={true}
+          cacheEnabled={true}
+          scrollEnabled={false}
+          zoomEnabled={false}
+          rotateEnabled={false}
+          pitchEnabled={false}
+        >
+          {selectedCoordinate ? (
+            <Marker coordinate={selectedCoordinate} />
+          ) : null}
+        </MapView>
       </View>
     </TouchableOpacity>
   );
