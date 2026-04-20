@@ -198,13 +198,6 @@ export default function TabLayout() {
             }}
           />
 
-          {/* ── Gizli Rota: Explore (Eski projeden kalma veya bağımsız sayfa) ─ */}
-          <Tabs.Screen
-            name="explore" // Eşleşen expo-router dosya yolu: 'src/app/explore.tsx'
-            // 'href: null' propertysi verilerek bu ekranın sekme navigasyonunda bir buton olarak listelenmesinin aktif olarak önüne geçilir.
-            options={{ href: null }}
-          />
-
           {/* ── Mantıksal Stack Ekranı: Profil ──────────────────────────────── */}
           <Tabs.Screen
             name="profile" // Eşleşen expo-router dosya yolu: 'src/app/profile.tsx'

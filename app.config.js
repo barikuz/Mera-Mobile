@@ -8,9 +8,6 @@ export default ({ config }) => ({
     icon: "./assets/images/icon.png",
     scheme: "meramobile",
     userInterfaceStyle: "automatic",
-    ios: {
-      icon: "./assets/expo.icon",
-    },
     android: {
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
