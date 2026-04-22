@@ -187,8 +187,10 @@ export default function TabLayout() {
           />
 
           {/* ── 3. Sekme: Asistan ───────────────────────────────────────────── */}
+          {/* Alt ekranlar (Mera Önerisi, Ekipman Tavsiyesi, Teknik İpuçları) assistant/ klasörü
+              altındaki Stack navigator ile yönetilir. */}
           <Tabs.Screen
-            name="assistant" // Eşleşen expo-router dosya yolu: 'src/app/assistant.tsx'
+            name="assistant" // Eşleşen expo-router dosya yolu: 'src/app/assistant/' (Stack layout)
             options={{
               title: "Asistan", // Alt menü barı başlık adı
               tabBarIcon: ({ color, size }) => (
@@ -230,30 +232,6 @@ export default function TabLayout() {
             name="add-catch"
             options={{
               title: "Av Ekle",
-              href: null,
-            }}
-          />
-
-          <Tabs.Screen
-            name="spot-recommendation"
-            options={{
-              title: "Mera Önerisi",
-              href: null,
-            }}
-          />
-
-          <Tabs.Screen
-            name="gear-recommendation"
-            options={{
-              title: "Ekipman Tavsiyesi",
-              href: null,
-            }}
-          />
-
-          <Tabs.Screen
-            name="technique-tips"
-            options={{
-              title: "Teknik İpuçları",
               href: null,
             }}
           />
