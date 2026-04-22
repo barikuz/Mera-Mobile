@@ -1,7 +1,7 @@
 import {
-  Ionicons,
-  MaterialCommunityIcons,
-  MaterialIcons,
+    Ionicons,
+    MaterialCommunityIcons,
+    MaterialIcons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -93,7 +93,7 @@ export default function AnaSayfaScreen() {
           title="Asistan"
           description="Yapay zekâ yardımı"
           icon={<MaterialIcons name="assistant" size={28} color={iconColor} />}
-          onPress={() => router.push("/asistan")}
+          onPress={() => router.push("/assistant")}
         />
         <QuickAccessCard
           title="Av İstatistikleri"

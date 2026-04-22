@@ -3,7 +3,7 @@
  * Expo Location ile foreground izni ister, ters geocoding yapar.
  *
  * Kullanım yerleri:
- * - Asistan ekranında (src/app/asistan.tsx) harita marker'si için koordinat sağlar
+ * - Asistan ekranında (src/app/assistant.tsx) harita marker'si için koordinat sağlar
  * - Ana sayfa (src/app/index.tsx) konum bilgisini metin olarak gösterir
  * - Harita bileşenlerinde (FishingSpotMapPreview, FishingSpotMapFullscreen) kırmızı kullanıcı marker'ı gösterir
  *
