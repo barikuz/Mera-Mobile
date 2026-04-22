@@ -234,6 +234,30 @@ export default function TabLayout() {
             }}
           />
 
+          <Tabs.Screen
+            name="spot-recommendation"
+            options={{
+              title: "Mera Önerisi",
+              href: null,
+            }}
+          />
+
+          <Tabs.Screen
+            name="gear-recommendation"
+            options={{
+              title: "Ekipman Tavsiyesi",
+              href: null,
+            }}
+          />
+
+          <Tabs.Screen
+            name="technique-tips"
+            options={{
+              title: "Teknik İpuçları",
+              href: null,
+            }}
+          />
+
           {/* ── Mantıksal Stack Ekranları: Auth ─────────────────────────────── */}
           <Tabs.Screen
             name="login"
