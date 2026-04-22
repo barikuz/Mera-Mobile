@@ -46,7 +46,7 @@ export default function AsistanScreen() {
 
           <Pressable
             className="h-40 flex-row overflow-hidden rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 dark:border-mera-neutral-500 dark:bg-mera-neutral-950"
-            onPress={() => router.push("/spot-recommendation")}
+            onPress={() => router.push("/assistant/spot-recommendation")}
             style={({ pressed }) => ({ opacity: pressed ? 0.84 : 1 })}
           >
             <View className="h-full flex-1">
@@ -78,7 +78,7 @@ export default function AsistanScreen() {
 
           <Pressable
             className="h-40 flex-row overflow-hidden rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 dark:border-mera-neutral-500 dark:bg-mera-neutral-950"
-            onPress={() => router.push("/gear-recommendation")}
+            onPress={() => router.push("/assistant/gear-recommendation")}
             style={({ pressed }) => ({ opacity: pressed ? 0.84 : 1 })}
           >
             <View className="h-full flex-1">
@@ -117,7 +117,7 @@ export default function AsistanScreen() {
 
           <Pressable
             className="h-40 flex-row overflow-hidden rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 dark:border-mera-neutral-500 dark:bg-mera-neutral-950"
-            onPress={() => router.push("/technique-tips")}
+            onPress={() => router.push("/assistant/technique-tips")}
             style={({ pressed }) => ({ opacity: pressed ? 0.84 : 1 })}
           >
             <View className="h-full flex-1">
