@@ -1,21 +1,21 @@
 import {
-  Comfortaa_500Medium,
-  Comfortaa_700Bold,
+    Comfortaa_500Medium,
+    Comfortaa_700Bold,
 } from "@expo-google-fonts/comfortaa";
 import {
-  Inter_400Regular,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  useFonts,
+    Inter_400Regular,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    useFonts,
 } from "@expo-google-fonts/inter";
 
 import { Ionicons } from "@expo/vector-icons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
 } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Tabs } from "expo-router";
@@ -188,7 +188,7 @@ export default function TabLayout() {
 
           {/* ── 3. Sekme: Asistan ───────────────────────────────────────────── */}
           <Tabs.Screen
-            name="asistan" // Eşleşen expo-router dosya yolu: 'src/app/asistan.tsx'
+            name="assistant" // Eşleşen expo-router dosya yolu: 'src/app/assistant.tsx'
             options={{
               title: "Asistan", // Alt menü barı başlık adı
               tabBarIcon: ({ color, size }) => (
