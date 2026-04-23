@@ -21,7 +21,7 @@ interface StatusBadgeProps {
   noMargin?: boolean;
 }
 
-const DEFAULT_BG = "bg-mera-primary/10 dark:bg-mera-accent/15";
+const DEFAULT_BG = "bg-mera-primary/10 dark:bg-mera-accent/10";
 const DEFAULT_TEXT = "text-mera-primary dark:text-mera-accent";
 
 export default function StatusBadge({
