@@ -11,6 +11,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import Button from "@/components/ui/Button";
 import ChipGroup from "@/components/ui/ChipGroup";
 import FishingSpotMapFullscreen from "@/components/ui/FishingSpotMapFullscreen";
+import MapButton from "@/components/ui/MapButton";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SkeletonBlock from "@/components/ui/SkeletonBlock";
@@ -21,6 +22,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import DropdownMenu from "../../components/ui/DropdownMenu";
 
 // ── Statik Mock Veri ──────────────────────────────────────────────────────────
 
@@ -233,42 +235,14 @@ export default function GearRecommendationScreen() {
           </Typography>
 
           <View className="flex-row items-stretch gap-2">
-            {/* Dropdown Toggle */}
-            <Pressable
-              className="flex-1 flex-row items-center justify-between rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 px-4 py-3 dark:border-mera-neutral-500 dark:bg-mera-neutral-800"
+            <DropdownMenu
+              value={selectedMera?.name}
+              placeholder="Mera seçin..."
+              isOpen={isMeraDropdownOpen}
               onPress={() => setIsMeraDropdownOpen((prev) => !prev)}
-              style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
-            >
-              <Typography
-                variant="body"
-                className={`flex-1 ${
-                  selectedMera
-                    ? "text-mera-neutral-900 dark:text-white"
-                    : "text-mera-neutral-500"
-                }`}
-                numberOfLines={1}
-              >
-                {selectedMera ? selectedMera.name : "Mera seçin..."}
-              </Typography>
-              <MaterialIcons
-                name={
-                  isMeraDropdownOpen
-                    ? "keyboard-arrow-up"
-                    : "keyboard-arrow-down"
-                }
-                size={22}
-                color="#64748B"
-              />
-            </Pressable>
+            />
 
-            {/* Haritada Seç Butonu */}
-            <Pressable
-              className="items-center justify-center rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 px-3.5 dark:border-mera-neutral-500 dark:bg-mera-neutral-800"
-              onPress={mapOverlay.expand}
-              style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
-            >
-              <MaterialIcons name="map" size={22} color={accentColor} />
-            </Pressable>
+            <MapButton onPress={mapOverlay.expand} iconColor={accentColor} />
           </View>
 
           {/* Dropdown Listesi */}
