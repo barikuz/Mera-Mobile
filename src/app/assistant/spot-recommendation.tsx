@@ -238,7 +238,8 @@ export default function SpotRecommendationScreen() {
                         label={mera.waterType}
                         bgClass={waterStyle.bg}
                         textClass={waterStyle.text}
-                        noMargin
+                        noMarginLeft
+                        noMarginBottom
                       />
 
                       {/* Derinlik Aralığı */}

@@ -18,7 +18,9 @@ interface StatusBadgeProps {
   /** Ek NativeWind sınıfları (örn. margin) */
   className?: string;
   /** Sol margin değerini kaldırır */
-  noMargin?: boolean;
+  noMarginLeft?: boolean;
+  /** Alt margin değerini kaldırır */
+  noMarginBottom?: boolean;
 }
 
 const DEFAULT_BG = "bg-mera-primary/10 dark:bg-mera-accent/10";
@@ -29,11 +31,12 @@ export default function StatusBadge({
   bgClass = DEFAULT_BG,
   textClass = DEFAULT_TEXT,
   className = "",
-  noMargin = false,
+  noMarginLeft = false,
+  noMarginBottom = false,
 }: StatusBadgeProps) {
   return (
     <View
-      className={`rounded-full px-2.5 py-0.5 ${noMargin ? "" : "ml-2"} ${bgClass} ${className}`}
+      className={`rounded-full px-2.5 py-0.5 ${noMarginLeft ? "" : "ml-2"} ${noMarginBottom ? "" : "mb-2"} ${bgClass} ${className}`}
     >
       <Typography
         variant="caption"
