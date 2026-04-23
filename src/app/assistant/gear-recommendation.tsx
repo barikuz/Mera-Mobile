@@ -6,7 +6,7 @@
  * yükleme durumu setTimeout ile simüle edilir.
  */
 import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 
 import Button from "@/components/ui/Button";
 import ChipGroup from "@/components/ui/ChipGroup";
@@ -231,7 +231,7 @@ export default function GearRecommendationScreen() {
         {/* ── 2. Avlak Noktası (Dropdown + Harita Butonu) ──────────────────── */}
         <View className="mb-5">
           <Typography variant="body" className="mb-2 font-inter-semibold">
-            Avlak Noktası (Mera)
+            Avlak Noktası
           </Typography>
 
           <View className="flex-row items-stretch gap-2">
@@ -315,11 +315,18 @@ export default function GearRecommendationScreen() {
             onPress={handleGetRecommendation}
             disabled={!isFormComplete || isLoading}
             icon={
-              <MaterialIcons
-                name={isLoading ? "hourglass-top" : "auto-awesome"}
-                size={20}
-                color={isDark ? "#0F162A" : "#F8FAFC"}
-              />
+              isLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={isDark ? "#0F162A" : "#F8FAFC"}
+                />
+              ) : (
+                <MaterialIcons
+                  name="auto-awesome"
+                  size={20}
+                  color={isDark ? "#0F162A" : "#F8FAFC"}
+                />
+              )
             }
           />
         </View>
@@ -353,11 +360,7 @@ export default function GearRecommendationScreen() {
             {/* Sonuç Başlığı */}
             <SectionHeader
               icon={
-                <MaterialIcons
-                  name="auto-awesome"
-                  size={20}
-                  color={accentColor}
-                />
+                <MaterialIcons name="backpack" size={20} color={accentColor} />
               }
               title="Önerilen Ekipman Seti"
               badge={`${gearResults.length} parça`}

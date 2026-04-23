@@ -133,12 +133,12 @@ export default function SpotRecommendationScreen() {
           <SectionHeader
             icon={
               <MaterialIcons
-                name="auto-awesome"
+                name="location-searching"
                 size={24}
                 color={accentColor}
               />
             }
-            title="Akıllı Mera Önerisi"
+            title="Mera Önerisi"
             subtitle="Hava, mevsim ve konum verilerinizi analiz ederek size en uygun avlak noktalarını önerir."
             className="mb-4"
           />
@@ -155,7 +155,7 @@ export default function SpotRecommendationScreen() {
                 />
               ) : (
                 <MaterialIcons
-                  name="location-searching"
+                  name="auto-awesome"
                   size={20}
                   color={isDark ? "#0F162A" : "#F8FAFC"}
                 />
