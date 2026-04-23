@@ -7,6 +7,7 @@ import {
   TacticalBoardVisual,
 } from "@/components/ui/AssistantFeatureVisuals";
 import ScreenContainer from "@/components/ui/ScreenContainer";
+import SectionHeader from "@/components/ui/SectionHeader";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -28,21 +29,17 @@ export default function AsistanScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="mb-6">
-          <View className="mb-2 flex-row items-center">
-            <MaterialIcons
-              name="location-searching"
-              size={24}
-              color={accentColor}
-            />
-            <Typography variant="h2" className="ml-2">
-              Mera Önerisi
-            </Typography>
-          </View>
-
-          <Typography variant="caption" className="mb-4">
-            Hava, mevsim ve konum verilerini analiz ederek en verimli avlak
-            noktalarını keşfet.
-          </Typography>
+          <SectionHeader
+            icon={
+              <MaterialIcons
+                name="location-searching"
+                size={24}
+                color={accentColor}
+              />
+            }
+            title="Mera Önerisi"
+            subtitle="Hava, mevsim ve konum verilerini analiz ederek en verimli avlak noktalarını keşfet."
+          />
 
           <Pressable
             className="h-40 flex-row overflow-hidden rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 dark:border-mera-neutral-500 dark:bg-mera-neutral-950"
@@ -64,17 +61,11 @@ export default function AsistanScreen() {
         </View>
 
         <View className="mb-6">
-          <View className="mb-2 flex-row items-center">
-            <MaterialCommunityIcons name="hook" size={24} color={accentColor} />
-            <Typography variant="h2" className="ml-2">
-              Ekipman Tavsiyesi
-            </Typography>
-          </View>
-
-          <Typography variant="caption" className="mb-4">
-            Hedef balığına ve meranın koşullarına en uygun olta, makine ve yem
-            kombinasyonunu oluştur.
-          </Typography>
+          <SectionHeader
+            icon={<MaterialCommunityIcons name="hook" size={24} color={accentColor} />}
+            title="Ekipman Tavsiyesi"
+            subtitle="Hedef balığına ve meranın koşullarına en uygun olta, makine ve yem kombinasyonunu oluştur."
+          />
 
           <Pressable
             className="h-40 flex-row overflow-hidden rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 dark:border-mera-neutral-500 dark:bg-mera-neutral-950"
@@ -99,21 +90,17 @@ export default function AsistanScreen() {
         </View>
 
         <View>
-          <View className="mb-2 flex-row items-center">
-            <MaterialIcons
-              name="tips-and-updates"
-              size={24}
-              color={accentColor}
-            />
-            <Typography variant="h2" className="ml-2">
-              Teknik İpuçları
-            </Typography>
-          </View>
-
-          <Typography variant="caption" className="mb-4">
-            Günün en iyi avlanma saatlerini, etkili düğüm çeşitlerini ve ava
-            özel profesyonel teknikleri öğren.
-          </Typography>
+          <SectionHeader
+            icon={
+              <MaterialIcons
+                name="tips-and-updates"
+                size={24}
+                color={accentColor}
+              />
+            }
+            title="Teknik İpuçları"
+            subtitle="Günün en iyi avlanma saatlerini, etkili düğüm çeşitlerini ve ava özel profesyonel teknikleri öğren."
+          />
 
           <Pressable
             className="h-40 flex-row overflow-hidden rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 dark:border-mera-neutral-500 dark:bg-mera-neutral-950"
