@@ -47,7 +47,7 @@ export default function SectionHeader({
         >
           {title}
         </Typography>
-        {badge && <StatusBadge label={badge} className="ml-2" />}
+        {badge && <StatusBadge label={badge} className="ml-2" noMarginBottom />}
       </View>
 
       {subtitle && <Typography variant="caption">{subtitle}</Typography>}

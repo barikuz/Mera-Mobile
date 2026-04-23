@@ -143,6 +143,10 @@ export default function GearRecommendationScreen() {
   // ── Form durumu ───────────────────────────────────────────────────────────
   const [selectedFish, setSelectedFish] = useState<FishSpecies | null>(null);
   const [selectedMera, setSelectedMera] = useState<MockMera | null>(null);
+  const [pendingCoordinate, setPendingCoordinate] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<FishingStyle | null>(null);
   const [isMeraDropdownOpen, setIsMeraDropdownOpen] = useState(false);
 
@@ -152,6 +156,34 @@ export default function GearRecommendationScreen() {
 
   // ── Harita Overlay ────────────────────────────────────────────────────────
   const mapOverlay = useExpandableOverlay();
+
+  const openMap = useCallback(() => {
+    setPendingCoordinate(selectedMera?.coordinate ?? null);
+    mapOverlay.expand();
+  }, [mapOverlay, selectedMera]);
+
+  const handleCoordinateSelect = useCallback(
+    (coordinate: { latitude: number; longitude: number }) => {
+      setPendingCoordinate({
+        latitude: Number(coordinate.latitude.toFixed(6)),
+        longitude: Number(coordinate.longitude.toFixed(6)),
+      });
+    },
+    [],
+  );
+
+  const handleConfirmLocation = useCallback(() => {
+    if (!pendingCoordinate) {
+      return;
+    }
+
+    setSelectedMera({
+      id: "custom-map",
+      name: `Koordinat (${pendingCoordinate.latitude.toFixed(4)}, ${pendingCoordinate.longitude.toFixed(4)})`,
+      coordinate: pendingCoordinate,
+    });
+    mapOverlay.collapse();
+  }, [mapOverlay, pendingCoordinate]);
 
   // ── Formu tamamlanmış mı kontrol et ───────────────────────────────────────
   const isFormComplete = useMemo(
@@ -230,31 +262,26 @@ export default function GearRecommendationScreen() {
 
         {/* ── 2. Avlak Noktası (Dropdown + Harita Butonu) ──────────────────── */}
         <View className="mb-5">
-          <Typography variant="body" className="mb-2 font-inter-semibold">
+          <Typography variant="body" className="mb-5 font-inter-semibold">
             Avlak Noktası
           </Typography>
 
-          <View className="flex-row items-stretch gap-2">
+          <View className="flex-row items-start gap-2">
             <DropdownMenu
               value={selectedMera?.name}
               placeholder="Mera seçin..."
               isOpen={isMeraDropdownOpen}
               onPress={() => setIsMeraDropdownOpen((prev) => !prev)}
-            />
-
-            <MapButton onPress={mapOverlay.expand} iconColor={accentColor} />
-          </View>
-
-          {/* Dropdown Listesi */}
-          {isMeraDropdownOpen && (
-            <View className="mt-1.5 overflow-hidden rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 dark:border-mera-neutral-500 dark:bg-mera-neutral-800">
-              {MOCK_MERAS.map((mera, index) => {
-                const isSelected = selectedMera?.id === mera.id;
-                const isLast = index === MOCK_MERAS.length - 1;
+            >
+              {[null, ...MOCK_MERAS].map((mera, index) => {
+                const isSelected = mera
+                  ? selectedMera?.id === mera.id
+                  : !selectedMera;
+                const isLast = index === MOCK_MERAS.length;
 
                 return (
                   <Pressable
-                    key={mera.id}
+                    key={mera?.id ?? "reset-mera-option"}
                     onPress={() => {
                       setSelectedMera(isSelected ? null : mera);
                       setIsMeraDropdownOpen(false);
@@ -268,21 +295,23 @@ export default function GearRecommendationScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <MaterialCommunityIcons
-                      name="map-marker"
-                      size={18}
-                      color={isSelected ? accentColor : "#64748B"}
-                    />
+                    {mera ? (
+                      <MaterialCommunityIcons
+                        name="map-marker"
+                        size={18}
+                        color={isSelected ? accentColor : "#64748B"}
+                      />
+                    ) : null}
                     <Typography
                       variant="body"
-                      className={`ml-2 flex-1 text-sm ${
+                      className={`${mera ? "ml-2" : ""} flex-1 text-sm ${
                         isSelected
                           ? "font-inter-semibold text-mera-primary dark:text-mera-accent"
                           : ""
                       }`}
                       numberOfLines={1}
                     >
-                      {mera.name}
+                      {mera?.name ?? "Mera seçin..."}
                     </Typography>
                     {isSelected && (
                       <MaterialIcons
@@ -294,8 +323,10 @@ export default function GearRecommendationScreen() {
                   </Pressable>
                 );
               })}
-            </View>
-          )}
+            </DropdownMenu>
+
+            <MapButton onPress={openMap} iconColor={accentColor} />
+          </View>
         </View>
 
         {/* ── 3. Avlanma Stili ─────────────────────────────────────────────── */}
@@ -374,7 +405,9 @@ export default function GearRecommendationScreen() {
               {selectedMera && (
                 <StatusBadge label={`📍 ${selectedMera.name}`} />
               )}
-              {selectedStyle && <StatusBadge label={`🎣 ${selectedStyle}`} />}
+              {selectedStyle && (
+                <StatusBadge label={`🎣 ${selectedStyle}`} className="!mt-2" />
+              )}
             </View>
 
             {/* Ekipman Kartları */}
@@ -406,7 +439,8 @@ export default function GearRecommendationScreen() {
                             bgClass={badge.bg}
                             textClass={badge.text}
                             className=""
-                            noMargin
+                            noMarginLeft
+                            noMarginBottom
                           />
                         </View>
 
@@ -486,12 +520,13 @@ export default function GearRecommendationScreen() {
       <FishingSpotMapFullscreen
         visible={mapOverlay.isExpanded}
         onClose={mapOverlay.collapse}
+        onConfirmSelection={handleConfirmLocation}
         animatedOverlayStyle={mapOverlay.animatedOverlayStyle}
         animatedMapStyle={mapOverlay.animatedMapStyle}
         animatedBackButtonStyle={mapOverlay.animatedBackButtonStyle}
         mode="coordinate"
-        selectedCoordinate={selectedMera?.coordinate ?? null}
-        readOnlyCoordinate={true}
+        selectedCoordinate={pendingCoordinate}
+        onCoordinateSelect={handleCoordinateSelect}
       />
     </ScreenContainer>
   );
