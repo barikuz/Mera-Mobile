@@ -1,9 +1,13 @@
 import React, { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 
+import Button from "@/components/ui/Button";
 import FishingSpotMapFullscreen from "@/components/ui/FishingSpotMapFullscreen";
 import FishingSpotMapPreview from "@/components/ui/FishingSpotMapPreview";
 import ScreenContainer from "@/components/ui/ScreenContainer";
+import SectionHeader from "@/components/ui/SectionHeader";
+import SkeletonBlock from "@/components/ui/SkeletonBlock";
+import StatusBadge from "@/components/ui/StatusBadge";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -126,45 +130,38 @@ export default function SpotRecommendationScreen() {
       >
         {/* ── AI Trigger Bölümü ──────────────────────────────────────────── */}
         <View className="mb-6">
-          <View className="mb-2 flex-row items-center">
-            <MaterialIcons name="auto-awesome" size={24} color={accentColor} />
-            <Typography variant="h2" className="ml-2">
-              Akıllı Mera Önerisi
-            </Typography>
-          </View>
+          <SectionHeader
+            icon={
+              <MaterialIcons
+                name="auto-awesome"
+                size={24}
+                color={accentColor}
+              />
+            }
+            title="Akıllı Mera Önerisi"
+            subtitle="Hava, mevsim ve konum verilerinizi analiz ederek size en uygun avlak noktalarını önerir."
+            className="mb-4"
+          />
 
-          <Typography variant="caption" className="mb-4">
-            Hava, mevsim ve konum verilerinizi analiz ederek size en uygun avlak
-            noktalarını önerir.
-          </Typography>
-
-          <Pressable
+          <Button
+            title={isLoading ? "Analiz Ediliyor..." : "Akıllı Öneri Al"}
             onPress={handleGetSuggestions}
             disabled={isLoading}
-            className="flex-row items-center justify-center rounded-xl bg-mera-primary py-3.5 dark:bg-mera-accent"
-            style={({ pressed }) => ({
-              opacity: pressed || isLoading ? 0.8 : 1,
-            })}
-          >
-            {isLoading ? (
-              <ActivityIndicator
-                size="small"
-                color={isDark ? "#0F162A" : "#F8FAFC"}
-              />
-            ) : (
-              <MaterialIcons
-                name="location-searching"
-                size={20}
-                color={isDark ? "#0F162A" : "#F8FAFC"}
-              />
-            )}
-            <Typography
-              variant="body"
-              className="ml-2 font-inter-semibold text-mera-neutral-100 dark:text-mera-neutral-950"
-            >
-              {isLoading ? "Analiz Ediliyor..." : "Akıllı Öneri Al"}
-            </Typography>
-          </Pressable>
+            icon={
+              isLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={isDark ? "#0F162A" : "#F8FAFC"}
+                />
+              ) : (
+                <MaterialIcons
+                  name="location-searching"
+                  size={20}
+                  color={isDark ? "#0F162A" : "#F8FAFC"}
+                />
+              )
+            }
+          />
         </View>
 
         {/* ── Loading Skeleton ────────────────────────────────────────────── */}
@@ -176,14 +173,14 @@ export default function SpotRecommendationScreen() {
                 className="mb-3 rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 p-4 dark:border-mera-neutral-500 dark:bg-mera-neutral-800"
               >
                 {/* İsim skeleton */}
-                <View className="mb-3 h-5 w-3/5 rounded-md bg-mera-neutral-200 dark:bg-mera-neutral-500" />
+                <SkeletonBlock className="mb-3 h-5 w-3/5 rounded-md" />
                 {/* Açıklama skeleton */}
-                <View className="mb-2 h-3 w-full rounded bg-mera-neutral-200 dark:bg-mera-neutral-500" />
-                <View className="mb-3 h-3 w-4/5 rounded bg-mera-neutral-200 dark:bg-mera-neutral-500" />
+                <SkeletonBlock className="mb-2 h-3 w-full" />
+                <SkeletonBlock className="mb-3 h-3 w-4/5" />
                 {/* Alt satır skeleton */}
                 <View className="flex-row items-center justify-between">
-                  <View className="h-6 w-20 rounded-full bg-mera-neutral-200 dark:bg-mera-neutral-500" />
-                  <View className="h-6 w-24 rounded-full bg-mera-neutral-200 dark:bg-mera-neutral-500" />
+                  <SkeletonBlock className="h-6 w-20 rounded-full" />
+                  <SkeletonBlock className="h-6 w-24 rounded-full" />
                 </View>
               </View>
             ))}
@@ -193,24 +190,19 @@ export default function SpotRecommendationScreen() {
         {/* ── Mera Kartları ───────────────────────────────────────────────── */}
         {showResults && !isLoading && (
           <View className="mb-6">
-            <View className="mb-3 flex-row items-center">
-              <MaterialCommunityIcons
-                name="map-marker-multiple"
-                size={20}
-                color={accentColor}
-              />
-              <Typography variant="body" className="ml-1.5 font-inter-semibold">
-                Önerilen Meralar
-              </Typography>
-              <View className="ml-2 rounded-full bg-mera-primary/10 px-2 py-0.5 dark:bg-mera-accent/15">
-                <Typography
-                  variant="caption"
-                  className="text-xs text-mera-primary dark:text-mera-accent"
-                >
-                  {MOCK_SUGGESTIONS.length} sonuç
-                </Typography>
-              </View>
-            </View>
+            <SectionHeader
+              icon={
+                <MaterialCommunityIcons
+                  name="map-marker-multiple"
+                  size={20}
+                  color={accentColor}
+                />
+              }
+              title="Önerilen Meralar"
+              badge={`${MOCK_SUGGESTIONS.length} sonuç`}
+              variant="subsection"
+              className="mb-3"
+            />
 
             {MOCK_SUGGESTIONS.map((mera) => {
               const waterStyle = WATER_TYPE_STYLES[mera.waterType];
@@ -242,23 +234,19 @@ export default function SpotRecommendationScreen() {
                     {/* Alt Bilgi Satırı */}
                     <View className="flex-row items-center">
                       {/* Su Tipi Badge */}
-                      <View
-                        className={`rounded-full px-2.5 py-1 ${waterStyle.bg}`}
-                      >
-                        <Typography
-                          variant="caption"
-                          className={`text-xs font-inter-semibold ${waterStyle.text}`}
-                        >
-                          {mera.waterType}
-                        </Typography>
-                      </View>
+                      <StatusBadge
+                        label={mera.waterType}
+                        bgClass={waterStyle.bg}
+                        textClass={waterStyle.text}
+                        noMargin
+                      />
 
                       {/* Derinlik Aralığı */}
                       <View className="ml-2 flex-row items-center">
                         <MaterialCommunityIcons
                           name="waves"
                           size={14}
-                          color={isDark ? "#64748B" : "#64748B"}
+                          color="#64748B"
                         />
                         <Typography variant="caption" className="ml-1 text-xs">
                           {mera.depthRange}
@@ -295,21 +283,18 @@ export default function SpotRecommendationScreen() {
 
         {/* ── Mera Keşfi Bölümü (Orijinal — aynen korunuyor) ─────────────── */}
         <View className="mb-2">
-          <View className="mb-2 flex-row items-center">
-            <MaterialCommunityIcons
-              name="magnify"
-              size={24}
-              color={accentColor}
-            />
-            <Typography variant="h2" className="ml-2">
-              Mera Keşfi
-            </Typography>
-          </View>
-
-          <Typography variant="caption" className="mb-4">
-            Bölgenizdeki en verimli balık tutma noktalarını harita üzerinden
-            keşfedin ve yeni meralar bulun.
-          </Typography>
+          <SectionHeader
+            icon={
+              <MaterialCommunityIcons
+                name="magnify"
+                size={24}
+                color={accentColor}
+              />
+            }
+            title="Mera Keşfi"
+            subtitle="Bölgenizdeki en verimli balık tutma noktalarını harita üzerinden keşfedin ve yeni meralar bulun."
+            className="mb-4"
+          />
 
           <FishingSpotMapPreview onPress={exploreOverlay.expand} />
         </View>
