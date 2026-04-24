@@ -2,6 +2,7 @@ import React, { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 
 import Button from "@/components/ui/Button";
+import ChipGroup from "@/components/ui/ChipGroup";
 import FishingSpotMapFullscreen from "@/components/ui/FishingSpotMapFullscreen";
 import FishingSpotMapPreview from "@/components/ui/FishingSpotMapPreview";
 import ScreenContainer from "@/components/ui/ScreenContainer";
@@ -24,6 +25,16 @@ interface MeraSuggestion {
   depthRange: string;
   coordinate: { latitude: number; longitude: number };
 }
+
+const FISH_SPECIES = [
+  "Levrek",
+  "Çipura",
+  "Lüfer",
+  "İstavrit",
+  "Palamut",
+] as const;
+
+type FishSpecies = (typeof FISH_SPECIES)[number];
 
 const MOCK_SUGGESTIONS: MeraSuggestion[] = [
   {
@@ -83,6 +94,7 @@ export default function SpotRecommendationScreen() {
   // ── AI Öneri Durumu ─────────────────────────────────────────────────────────
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [selectedFish, setSelectedFish] = useState<FishSpecies | null>(null);
 
   // ── Harita Modalı için Seçili Mera ──────────────────────────────────────────
   const [selectedMera, setSelectedMera] = useState<MeraSuggestion | null>(null);
@@ -143,10 +155,19 @@ export default function SpotRecommendationScreen() {
             className="mb-4"
           />
 
+          <View className="mb-5">
+            <ChipGroup
+              label="Hedef Balık Türü"
+              items={FISH_SPECIES}
+              selectedItem={selectedFish}
+              onSelect={setSelectedFish}
+            />
+          </View>
+
           <Button
             title={isLoading ? "Analiz Ediliyor..." : "Akıllı Öneri Al"}
             onPress={handleGetSuggestions}
-            disabled={isLoading}
+            disabled={isLoading || !selectedFish}
             icon={
               isLoading ? (
                 <ActivityIndicator
