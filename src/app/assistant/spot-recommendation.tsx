@@ -5,6 +5,7 @@ import Button from "@/components/ui/Button";
 import ChipGroup from "@/components/ui/ChipGroup";
 import FishingSpotMapFullscreen from "@/components/ui/FishingSpotMapFullscreen";
 import FishingSpotMapPreview from "@/components/ui/FishingSpotMapPreview";
+import MapButton from "@/components/ui/MapButton";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SkeletonBlock from "@/components/ui/SkeletonBlock";
@@ -95,12 +96,23 @@ export default function SpotRecommendationScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [selectedFish, setSelectedFish] = useState<FishSpecies | null>(null);
+  const [selectedCoordinate, setSelectedCoordinate] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [pendingCoordinate, setPendingCoordinate] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   // ── Harita Modalı için Seçili Mera ──────────────────────────────────────────
   const [selectedMera, setSelectedMera] = useState<MeraSuggestion | null>(null);
 
   // ── Mera Keşfi (orijinal harita) expandable overlay ─────────────────────────
   const exploreOverlay = useExpandableOverlay();
+
+  // ── Avlak Noktası seçimi için harita overlay ────────────────────────────────
+  const locationOverlay = useExpandableOverlay();
 
   // ── Kart Haritası expandable overlay ────────────────────────────────────────
   const cardMapOverlay = useExpandableOverlay();
@@ -133,6 +145,34 @@ export default function SpotRecommendationScreen() {
     setTimeout(() => setSelectedMera(null), 350);
   }, [cardMapOverlay]);
 
+  const openLocationMap = useCallback(() => {
+    setPendingCoordinate(selectedCoordinate);
+    locationOverlay.expand();
+  }, [locationOverlay, selectedCoordinate]);
+
+  const handleCoordinateSelect = useCallback(
+    (coordinate: { latitude: number; longitude: number }) => {
+      setPendingCoordinate({
+        latitude: Number(coordinate.latitude.toFixed(6)),
+        longitude: Number(coordinate.longitude.toFixed(6)),
+      });
+    },
+    [],
+  );
+
+  const handleConfirmLocation = useCallback(() => {
+    if (!pendingCoordinate) {
+      return;
+    }
+
+    setSelectedCoordinate(pendingCoordinate);
+    locationOverlay.collapse();
+  }, [locationOverlay, pendingCoordinate]);
+
+  const selectedCoordinateLabel = selectedCoordinate
+    ? `Koordinat (${selectedCoordinate.latitude.toFixed(4)}, ${selectedCoordinate.longitude.toFixed(4)})`
+    : "Konum seçin...";
+
   return (
     <ScreenContainer>
       <ScrollView
@@ -164,10 +204,36 @@ export default function SpotRecommendationScreen() {
             />
           </View>
 
+          <View className="mb-5">
+            <Typography variant="body" className="mb-3 font-inter-semibold">
+              Bölge
+            </Typography>
+
+            <View className="flex-row items-center">
+              <View className="h-[48px] flex-1 justify-center rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 px-4 dark:border-mera-neutral-500 dark:bg-mera-neutral-800">
+                <View className="h-full justify-center">
+                  <Typography
+                    variant="body"
+                    className={`${
+                      selectedCoordinate
+                        ? "text-mera-neutral-900 dark:text-white"
+                        : "text-mera-neutral-500"
+                    }`}
+                    numberOfLines={1}
+                  >
+                    {selectedCoordinateLabel}
+                  </Typography>
+                </View>
+              </View>
+
+              <MapButton onPress={openLocationMap} iconColor={accentColor} />
+            </View>
+          </View>
+
           <Button
             title={isLoading ? "Analiz Ediliyor..." : "Akıllı Öneri Al"}
             onPress={handleGetSuggestions}
-            disabled={isLoading || !selectedFish}
+            disabled={isLoading || !selectedFish || !selectedCoordinate}
             icon={
               isLoading ? (
                 <ActivityIndicator
@@ -224,6 +290,13 @@ export default function SpotRecommendationScreen() {
               variant="subsection"
               className="mb-3"
             />
+
+            <View className="mb-3 flex-row flex-wrap gap-1.5">
+              {selectedFish && <StatusBadge label={`🐟 ${selectedFish}`} />}
+              {selectedCoordinate && (
+                <StatusBadge label={`📍 ${selectedCoordinateLabel}`} />
+              )}
+            </View>
 
             {MOCK_SUGGESTIONS.map((mera) => {
               const waterStyle = WATER_TYPE_STYLES[mera.waterType];
@@ -329,6 +402,19 @@ export default function SpotRecommendationScreen() {
         animatedOverlayStyle={exploreOverlay.animatedOverlayStyle}
         animatedMapStyle={exploreOverlay.animatedMapStyle}
         animatedBackButtonStyle={exploreOverlay.animatedBackButtonStyle}
+      />
+
+      {/* ── Avlak Noktası Seçimi Tam Ekran Harita ───────────────────────── */}
+      <FishingSpotMapFullscreen
+        visible={locationOverlay.isExpanded}
+        onClose={locationOverlay.collapse}
+        onConfirmSelection={handleConfirmLocation}
+        animatedOverlayStyle={locationOverlay.animatedOverlayStyle}
+        animatedMapStyle={locationOverlay.animatedMapStyle}
+        animatedBackButtonStyle={locationOverlay.animatedBackButtonStyle}
+        mode="coordinate"
+        selectedCoordinate={pendingCoordinate}
+        onCoordinateSelect={handleCoordinateSelect}
       />
 
       {/* ── Kart Harita Modalı (Seçili Mera Noktası) ─────────────────────── */}
