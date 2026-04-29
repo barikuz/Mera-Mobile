@@ -18,6 +18,7 @@ import SkeletonBlock from "@/components/ui/SkeletonBlock";
 import StatusBadge from "@/components/ui/StatusBadge";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
+import { useFishingStyles, useFishSpecies } from "@/hooks/useCatalog";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -25,20 +26,6 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import DropdownMenu from "../../components/ui/DropdownMenu";
 
 // ── Statik Mock Veri ──────────────────────────────────────────────────────────
-
-/** Hedef balık türleri */
-const FISH_SPECIES = [
-  "Levrek",
-  "Çipura",
-  "Lüfer",
-  "İstavrit",
-  "Palamut",
-] as const;
-type FishSpecies = (typeof FISH_SPECIES)[number];
-
-/** Avlanma stilleri */
-const FISHING_STYLES = ["Spin", "LRF", "Yemli", "Surf"] as const;
-type FishingStyle = (typeof FISHING_STYLES)[number];
 
 /** Mock mera listesi (dropdown için) */
 interface MockMera {
@@ -90,9 +77,9 @@ interface GearItem {
  * Gerçek senaryoda burası API'den gelir.
  */
 function getMockGearSet(
-  fish: FishSpecies,
+  fish: string,
   _meraId: string,
-  style: FishingStyle,
+  style: string,
 ): GearItem[] {
   const gearMap: Record<string, GearItem[]> = {
     default: [
@@ -139,15 +126,21 @@ export default function GearRecommendationScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const accentColor = isDark ? COLORS.dark.iconActive : COLORS.light.iconActive;
+  const fishSpeciesQuery = useFishSpecies();
+  const fishingStylesQuery = useFishingStyles();
+
+  const fishSpeciesItems = fishSpeciesQuery.data?.map((item) => item.name) ?? [];
+  const fishingStyleItems =
+    fishingStylesQuery.data?.map((item) => item.name) ?? [];
 
   // ── Form durumu ───────────────────────────────────────────────────────────
-  const [selectedFish, setSelectedFish] = useState<FishSpecies | null>(null);
+  const [selectedFish, setSelectedFish] = useState<string | null>(null);
   const [selectedMera, setSelectedMera] = useState<MockMera | null>(null);
   const [pendingCoordinate, setPendingCoordinate] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState<FishingStyle | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [isMeraDropdownOpen, setIsMeraDropdownOpen] = useState(false);
 
   // ── Sonuç durumu ──────────────────────────────────────────────────────────
@@ -254,10 +247,25 @@ export default function GearRecommendationScreen() {
         <View className="mb-5">
           <ChipGroup
             label="Hedef Balık Türü"
-            items={FISH_SPECIES}
+            items={fishSpeciesItems}
             selectedItem={selectedFish}
             onSelect={setSelectedFish}
           />
+          {fishSpeciesQuery.isLoading ? (
+            <View className="mt-2 flex-row items-center gap-2">
+              <ActivityIndicator size="small" color={accentColor} />
+              <Typography variant="caption" className="text-mera-neutral-500">
+                Türler yükleniyor...
+              </Typography>
+            </View>
+          ) : fishSpeciesQuery.isError ? (
+            <Typography
+              variant="caption"
+              className="mt-2 text-mera-status-error"
+            >
+              Türler yüklenemedi. Lütfen tekrar deneyin.
+            </Typography>
+          ) : null}
         </View>
 
         {/* ── 2. Avlak Noktası (Dropdown + Harita Butonu) ──────────────────── */}
@@ -333,10 +341,25 @@ export default function GearRecommendationScreen() {
         <View className="mb-6">
           <ChipGroup
             label="Avlanma Stili"
-            items={FISHING_STYLES}
+            items={fishingStyleItems}
             selectedItem={selectedStyle}
             onSelect={setSelectedStyle}
           />
+          {fishingStylesQuery.isLoading ? (
+            <View className="mt-2 flex-row items-center gap-2">
+              <ActivityIndicator size="small" color={accentColor} />
+              <Typography variant="caption" className="text-mera-neutral-500">
+                Stiller yükleniyor...
+              </Typography>
+            </View>
+          ) : fishingStylesQuery.isError ? (
+            <Typography
+              variant="caption"
+              className="mt-2 text-mera-status-error"
+            >
+              Avlanma stilleri yüklenemedi. Lütfen tekrar deneyin.
+            </Typography>
+          ) : null}
         </View>
 
         {/* ── Ana Aksiyon Butonu ────────────────────────────────────────────── */}

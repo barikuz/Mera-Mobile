@@ -19,19 +19,9 @@ import ScreenContainer from "@/components/ui/ScreenContainer";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFishSpecies } from "@/hooks/useCatalog";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import { useAuthStore } from "@/store/useAuthStore";
-
-const SPECIES_OPTIONS = [
-  "Levrek",
-  "Çipura",
-  "Lüfer",
-  "İstavrit",
-  "Palamut",
-  "Diğer",
-] as const;
-
-type SpeciesOption = (typeof SPECIES_OPTIONS)[number];
 
 type CreateCatchPayload = {
   species: string;
@@ -184,6 +174,11 @@ export default function AddCatchScreen() {
   const colorScheme = useColorScheme();
   const scheme = colorScheme === "dark" ? "dark" : "light";
   const themeColors = COLORS[scheme];
+  const fishSpeciesQuery = useFishSpecies();
+  const speciesOptions = useMemo(
+    () => [...(fishSpeciesQuery.data?.map((item) => item.name) ?? []), "Diğer"],
+    [fishSpeciesQuery.data],
+  );
 
   const [species, setSpecies] = useState("");
   const [isOtherSpeciesSelected, setIsOtherSpeciesSelected] = useState(false);
@@ -232,7 +227,7 @@ export default function AddCatchScreen() {
     setPendingLocationLng(null);
   };
 
-  const handleSpeciesSelect = (option: SpeciesOption) => {
+  const handleSpeciesSelect = (option: string) => {
     if (option === "Diğer") {
       setIsOtherSpeciesSelected(true);
       setSpecies("");
@@ -321,8 +316,24 @@ export default function AddCatchScreen() {
               Tür
             </Text>
 
+            {fishSpeciesQuery.isLoading ? (
+              <View className="mb-3 flex-row items-center gap-2">
+                <ActivityIndicator
+                  size="small"
+                  color={themeColors.iconActive}
+                />
+                <Text className="text-sm text-mera-neutral-500">
+                  Türler yükleniyor...
+                </Text>
+              </View>
+            ) : fishSpeciesQuery.isError ? (
+              <Text className="mb-3 text-sm text-mera-status-error">
+                Türler yüklenemedi. Lütfen tekrar deneyin.
+              </Text>
+            ) : null}
+
             <View className="flex-row flex-wrap justify-between">
-              {SPECIES_OPTIONS.map((option) => {
+              {speciesOptions.map((option) => {
                 const isSelected =
                   option === "Diğer"
                     ? isOtherSpeciesSelected
