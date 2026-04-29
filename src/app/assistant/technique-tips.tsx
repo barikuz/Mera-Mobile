@@ -13,19 +13,10 @@ import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
+import { useFishSpecies } from "@/hooks/useCatalog";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import DropdownMenu from "../../components/ui/DropdownMenu";
-
-const FISH_SPECIES = [
-  "Levrek",
-  "Çipura",
-  "Lüfer",
-  "İstavrit",
-  "Palamut",
-] as const;
-
-type FishSpecies = (typeof FISH_SPECIES)[number];
 
 interface MockMera {
   id: string;
@@ -73,7 +64,7 @@ const MOCK_MERAS: MockMera[] = [
   },
 ];
 
-const DEFAULT_TECHNIQUES: Record<FishSpecies, TechniqueGuide> = {
+const DEFAULT_TECHNIQUES: Record<string, TechniqueGuide> = {
   Levrek: {
     bestTime: {
       headline: "Şafak ve gün batımı arası rüzgar kırığı kıyılar",
@@ -240,7 +231,7 @@ const TECHNIQUE_OVERRIDES: Record<string, TechniqueGuide> = {
   },
 };
 
-function getTechniqueGuide(fish: FishSpecies, meraId: string): TechniqueGuide {
+function getTechniqueGuide(fish: string, meraId: string): TechniqueGuide {
   const override = TECHNIQUE_OVERRIDES[`${fish}:${meraId}`];
   if (override) {
     return override;
@@ -259,8 +250,10 @@ export default function TechniqueTipsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const accentColor = isDark ? COLORS.dark.iconActive : COLORS.light.iconActive;
+  const fishSpeciesQuery = useFishSpecies();
+  const fishSpeciesItems = fishSpeciesQuery.data?.map((item) => item.name) ?? [];
 
-  const [selectedFish, setSelectedFish] = useState<FishSpecies | null>(null);
+  const [selectedFish, setSelectedFish] = useState<string | null>(null);
   const [selectedMera, setSelectedMera] = useState<MockMera | null>(null);
   const [pendingCoordinate, setPendingCoordinate] = useState<{
     latitude: number;
@@ -352,10 +345,25 @@ export default function TechniqueTipsScreen() {
         <View className="mb-5">
           <ChipGroup
             label="Hedef Balık Türü"
-            items={FISH_SPECIES}
+            items={fishSpeciesItems}
             selectedItem={selectedFish}
             onSelect={setSelectedFish}
           />
+          {fishSpeciesQuery.isLoading ? (
+            <View className="mt-2 flex-row items-center gap-2">
+              <ActivityIndicator size="small" color={accentColor} />
+              <Typography variant="caption" className="text-mera-neutral-500">
+                Türler yükleniyor...
+              </Typography>
+            </View>
+          ) : fishSpeciesQuery.isError ? (
+            <Typography
+              variant="caption"
+              className="mt-2 text-mera-status-error"
+            >
+              Türler yüklenemedi. Lütfen tekrar deneyin.
+            </Typography>
+          ) : null}
         </View>
 
         <View className="mb-6">

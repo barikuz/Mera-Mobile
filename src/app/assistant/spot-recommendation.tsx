@@ -14,6 +14,7 @@ import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
+import { useFishSpecies } from "@/hooks/useCatalog";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
@@ -26,16 +27,6 @@ interface MeraSuggestion {
   depthRange: string;
   coordinate: { latitude: number; longitude: number };
 }
-
-const FISH_SPECIES = [
-  "Levrek",
-  "Çipura",
-  "Lüfer",
-  "İstavrit",
-  "Palamut",
-] as const;
-
-type FishSpecies = (typeof FISH_SPECIES)[number];
 
 const MOCK_SUGGESTIONS: MeraSuggestion[] = [
   {
@@ -91,11 +82,13 @@ export default function SpotRecommendationScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const accentColor = isDark ? COLORS.dark.iconActive : COLORS.light.iconActive;
+  const fishSpeciesQuery = useFishSpecies();
+  const fishSpeciesItems = fishSpeciesQuery.data?.map((item) => item.name) ?? [];
 
   // ── AI Öneri Durumu ─────────────────────────────────────────────────────────
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [selectedFish, setSelectedFish] = useState<FishSpecies | null>(null);
+  const [selectedFish, setSelectedFish] = useState<string | null>(null);
   const [selectedCoordinate, setSelectedCoordinate] = useState<{
     latitude: number;
     longitude: number;
@@ -198,10 +191,25 @@ export default function SpotRecommendationScreen() {
           <View className="mb-5">
             <ChipGroup
               label="Hedef Balık Türü"
-              items={FISH_SPECIES}
+              items={fishSpeciesItems}
               selectedItem={selectedFish}
               onSelect={setSelectedFish}
             />
+            {fishSpeciesQuery.isLoading ? (
+              <View className="mt-2 flex-row items-center gap-2">
+                <ActivityIndicator size="small" color={accentColor} />
+                <Typography variant="caption" className="text-mera-neutral-500">
+                  Türler yükleniyor...
+                </Typography>
+              </View>
+            ) : fishSpeciesQuery.isError ? (
+              <Typography
+                variant="caption"
+                className="mt-2 text-mera-status-error"
+              >
+                Türler yüklenemedi. Lütfen tekrar deneyin.
+              </Typography>
+            ) : null}
           </View>
 
           <View className="mb-5">
