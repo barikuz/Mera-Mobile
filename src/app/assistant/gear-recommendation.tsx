@@ -2,11 +2,18 @@
  * GearRecommendationScreen — Ekipman Tavsiyesi ekranı.
  *
  * Hedef balık türü, avlak noktası ve avlanma stili parametrelerine göre
- * AI destekli ekipman seti önerisi sunar. Tüm veri statik mock'tur;
- * yükleme durumu setTimeout ile simüle edilir.
+ * AI destekli ekipman seti önerisi sunar. Yanıtlar cihazda saklanır ve
+ * kullanıcı yeni öneri istemedikçe tekrar istek atılmaz.
  */
-import React, { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
 
 import Button from "@/components/ui/Button";
 import ChipGroup from "@/components/ui/ChipGroup";
@@ -21,46 +28,13 @@ import { COLORS } from "@/constants/color";
 import { useFishingStyles, useFishSpecies } from "@/hooks/useCatalog";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
+import { useFishingSpots } from "@/hooks/useFishingSpots";
+import { useGearRecommendation } from "@/hooks/useGearRecommendation";
+import { useCartStore } from "@/store/useCartStore";
+import { SelectedSpot } from "@/store/useAssistantStore";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import DropdownMenu from "../../components/ui/DropdownMenu";
-
-// ── Statik Mock Veri ──────────────────────────────────────────────────────────
-
-/** Mock mera listesi (dropdown için) */
-interface MockMera {
-  id: string;
-  name: string;
-  coordinate: { latitude: number; longitude: number };
-}
-
-const MOCK_MERAS: MockMera[] = [
-  {
-    id: "m1",
-    name: "Keban Barajı Çıkışı",
-    coordinate: { latitude: 38.7936, longitude: 38.7289 },
-  },
-  {
-    id: "m2",
-    name: "Hazar Gölü Kuzey Kıyısı",
-    coordinate: { latitude: 38.5095, longitude: 39.3826 },
-  },
-  {
-    id: "m3",
-    name: "Palu Çayı Kavşağı",
-    coordinate: { latitude: 38.6912, longitude: 39.9312 },
-  },
-  {
-    id: "m4",
-    name: "Fırat Nehri Deltası",
-    coordinate: { latitude: 38.4321, longitude: 38.9145 },
-  },
-  {
-    id: "m5",
-    name: "Sivrice Kıyıları",
-    coordinate: { latitude: 38.4503, longitude: 39.3105 },
-  },
-];
 
 /** Ekipman tipi ikonları ve etiketleri */
 interface GearItem {
@@ -70,47 +44,6 @@ interface GearItem {
   name: string;
   price: number;
   expertNote: string;
-}
-
-/**
- * Mock AI önerisi: Seçilen parametrelere göre ekipman seti döndürür.
- * Gerçek senaryoda burası API'den gelir.
- */
-function getMockGearSet(
-  fish: string,
-  _meraId: string,
-  style: string,
-): GearItem[] {
-  const gearMap: Record<string, GearItem[]> = {
-    default: [
-      {
-        type: "rod",
-        label: "Kamış",
-        icon: "fish",
-        name: "Shimano Nasci AX 270MH",
-        price: 3249,
-        expertNote: `${fish} avında ${style} tekniği için 2.70m orta-ağır aksiyon kamış, atış mesafesi ve hassasiyet arasında ideal denge sağlar.`,
-      },
-      {
-        type: "reel",
-        label: "Makine",
-        icon: "rotate-3d-variant",
-        name: "Daiwa Fuego LT 3000-C",
-        price: 4599,
-        expertNote: `LT (Light & Tough) gövde yapısı gün boyu yorulmadan kullanım sağlar. 3000 numara, ${fish} için gereken ipek kapasitesi ve fren gücünü sunar.`,
-      },
-      {
-        type: "bait",
-        label: "Yem / Sahte Yem",
-        icon: "hook",
-        name: "DUO Tide Minnow 75 Sprint",
-        price: 549,
-        expertNote: `Sığ su ${style} uygulamalarında ${fish} için mükemmel. Gerçekçi yüzme aksiyonu ve doğal renk paleti hedef balığı tahrik eder.`,
-      },
-    ],
-  };
-
-  return gearMap.default;
 }
 
 // ── Gear type badge renk eşlemeleri ───────────────────────────────────────────
@@ -126,29 +59,63 @@ export default function GearRecommendationScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const accentColor = isDark ? COLORS.dark.iconActive : COLORS.light.iconActive;
+  const addToCart = useCartStore((state) => state.addToCart);
   const fishSpeciesQuery = useFishSpecies();
   const fishingStylesQuery = useFishingStyles();
+  const fishingSpotsQuery = useFishingSpots();
+  const {
+    data: gearResults,
+    lastRequest,
+    isLoading,
+    error,
+    getRecommendation,
+    retry,
+  } = useGearRecommendation();
 
   const fishSpeciesItems = fishSpeciesQuery.data?.map((item) => item.name) ?? [];
   const fishingStyleItems =
     fishingStylesQuery.data?.map((item) => item.name) ?? [];
+  const fishingSpotItems = useMemo<SelectedSpot[]>(
+    () =>
+      fishingSpotsQuery.spots.map((spot) => ({
+        id: spot.id,
+        name: spot.name,
+        coordinate: {
+          latitude: spot.center_lat,
+          longitude: spot.center_lng,
+        },
+      })),
+    [fishingSpotsQuery.spots],
+  );
 
   // ── Form durumu ───────────────────────────────────────────────────────────
-  const [selectedFish, setSelectedFish] = useState<string | null>(null);
-  const [selectedMera, setSelectedMera] = useState<MockMera | null>(null);
+  const [selectedFish, setSelectedFish] = useState<string | null>(
+    lastRequest?.targetFish ?? null,
+  );
+  const [selectedMera, setSelectedMera] = useState<SelectedSpot | null>(
+    lastRequest?.selectedSpot ?? null,
+  );
   const [pendingCoordinate, setPendingCoordinate] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<string | null>(
+    lastRequest?.fishingStyle ?? null,
+  );
   const [isMeraDropdownOpen, setIsMeraDropdownOpen] = useState(false);
-
-  // ── Sonuç durumu ──────────────────────────────────────────────────────────
-  const [isLoading, setIsLoading] = useState(false);
-  const [gearResults, setGearResults] = useState<GearItem[] | null>(null);
 
   // ── Harita Overlay ────────────────────────────────────────────────────────
   const mapOverlay = useExpandableOverlay();
+
+  useEffect(() => {
+    if (!lastRequest) {
+      return;
+    }
+
+    setSelectedFish((prev) => prev ?? lastRequest.targetFish);
+    setSelectedStyle((prev) => prev ?? lastRequest.fishingStyle);
+    setSelectedMera((prev) => prev ?? lastRequest.selectedSpot);
+  }, [lastRequest]);
 
   const openMap = useCallback(() => {
     setPendingCoordinate(selectedMera?.coordinate ?? null);
@@ -190,33 +157,64 @@ export default function GearRecommendationScreen() {
     if (!isFormComplete || !selectedFish || !selectedMera || !selectedStyle)
       return;
 
-    setIsLoading(true);
-    setGearResults(null);
-
-    setTimeout(() => {
-      const results = getMockGearSet(
-        selectedFish,
-        selectedMera.id,
-        selectedStyle,
-      );
-      setGearResults(results);
-      setIsLoading(false);
-    }, 1800);
-  }, [isFormComplete, selectedFish, selectedMera, selectedStyle]);
+    void getRecommendation({
+      targetFish: selectedFish,
+      coordinates: selectedMera.coordinate,
+      fishingStyle: selectedStyle,
+      selectedSpot: selectedMera,
+    });
+  }, [getRecommendation, isFormComplete, selectedFish, selectedMera, selectedStyle]);
 
   // ── Sepete Ekle (Simülasyon) ──────────────────────────────────────────────
   const handleAddAllToCart = useCallback(() => {
-    if (!gearResults) return;
+    if (!gearResults || gearResults.length === 0) {
+      Alert.alert(
+        "Sepete Eklenemedi",
+        "Sepete eklenecek ekipman önerisi bulunamadı.",
+      );
+      return;
+    }
 
-    const totalPrice = gearResults.reduce((sum, item) => sum + item.price, 0);
-    console.log("──────────────────────────────────────");
-    console.log("🛒 Tüm set sepete eklendi!");
-    gearResults.forEach((item) =>
-      console.log(`   • ${item.label}: ${item.name} — ₺${item.price}`),
-    );
-    console.log(`   💰 Toplam: ₺${totalPrice}`);
-    console.log("──────────────────────────────────────");
-  }, [gearResults]);
+    try {
+      const cartReadyItems = gearResults.filter(
+        (item): item is typeof item & { productId: string } =>
+          typeof item.productId === "string" && item.productId.length > 0,
+      );
+
+      if (cartReadyItems.length === 0) {
+        Alert.alert(
+          "Sepete Eklenemedi",
+          "Önerilerde sepete eklenebilecek ürün kimliği bulunamadı.",
+        );
+        return;
+      }
+
+      cartReadyItems.forEach((item) => {
+        addToCart({
+          productId: item.productId,
+          productName: item.name || item.label,
+          price: item.price,
+          imageUrl: item.imageUrl ?? "",
+        });
+      });
+
+      const skippedItemCount = gearResults.length - cartReadyItems.length;
+      const successMessage =
+        skippedItemCount > 0
+          ? `${cartReadyItems.length} ekipman sepete eklendi. ${skippedItemCount} öneri, ürün kimliği eksik olduğu için atlandı.`
+          : `Önerilen ${cartReadyItems.length} ekipman parçası sepetinize eklendi.`;
+
+      Alert.alert(
+        skippedItemCount > 0 ? "Kısmen Eklendi" : "Sepete Eklendi",
+        successMessage,
+      );
+    } catch {
+      Alert.alert(
+        "Sepete Eklenemedi",
+        "Önerilen ekipmanlar sepete eklenirken bir hata oluştu.",
+      );
+    }
+  }, [addToCart, gearResults]);
 
   // ── Fiyat formatı ─────────────────────────────────────────────────────────
   const formatPrice = (price: number) =>
@@ -281,11 +279,11 @@ export default function GearRecommendationScreen() {
               isOpen={isMeraDropdownOpen}
               onPress={() => setIsMeraDropdownOpen((prev) => !prev)}
             >
-              {[null, ...MOCK_MERAS].map((mera, index) => {
+              {[null, ...fishingSpotItems].map((mera, index) => {
                 const isSelected = mera
                   ? selectedMera?.id === mera.id
                   : !selectedMera;
-                const isLast = index === MOCK_MERAS.length;
+                const isLast = index === fishingSpotItems.length;
 
                 return (
                   <Pressable
@@ -335,6 +333,21 @@ export default function GearRecommendationScreen() {
 
             <MapButton onPress={openMap} iconColor={accentColor} />
           </View>
+          {fishingSpotsQuery.loading ? (
+            <View className="mt-2 flex-row items-center gap-2">
+              <ActivityIndicator size="small" color={accentColor} />
+              <Typography variant="caption" className="text-mera-neutral-500">
+                Meralar yükleniyor...
+              </Typography>
+            </View>
+          ) : fishingSpotsQuery.error ? (
+            <Typography
+              variant="caption"
+              className="mt-2 text-mera-status-error"
+            >
+              {fishingSpotsQuery.error}
+            </Typography>
+          ) : null}
         </View>
 
         {/* ── 3. Avlanma Stili ─────────────────────────────────────────────── */}
@@ -365,7 +378,13 @@ export default function GearRecommendationScreen() {
         {/* ── Ana Aksiyon Butonu ────────────────────────────────────────────── */}
         <View className="mb-6">
           <Button
-            title={isLoading ? "Analiz Ediliyor..." : "Kombinasyon Önerisi Al"}
+            title={
+              isLoading
+                ? "Analiz Ediliyor..."
+                : gearResults
+                  ? "Yeni Kombinasyon Al"
+                  : "Kombinasyon Önerisi Al"
+            }
             onPress={handleGetRecommendation}
             disabled={!isFormComplete || isLoading}
             icon={
@@ -424,35 +443,48 @@ export default function GearRecommendationScreen() {
 
             {/* Seçili parametreler özeti */}
             <View className="mb-3 flex-row flex-wrap gap-1.5">
-              {selectedFish && <StatusBadge label={`🐟 ${selectedFish}`} />}
-              {selectedMera && (
-                <StatusBadge label={`📍 ${selectedMera.name}`} />
+              {lastRequest?.targetFish && (
+                <StatusBadge label={`🐟 ${lastRequest.targetFish}`} />
               )}
-              {selectedStyle && (
-                <StatusBadge label={`🎣 ${selectedStyle}`} className="!mt-2" />
+              {lastRequest?.selectedSpot && (
+                <StatusBadge label={`📍 ${lastRequest.selectedSpot.name}`} />
+              )}
+              {lastRequest?.fishingStyle && (
+                <StatusBadge
+                  label={`🎣 ${lastRequest.fishingStyle}`}
+                  className="!mt-2"
+                />
               )}
             </View>
 
             {/* Ekipman Kartları */}
-            {gearResults.map((item) => {
+            {gearResults.map((item, index) => {
               const badge = GEAR_TYPE_BADGE[item.type];
 
               return (
                 <View
-                  key={item.type}
+                  key={`${item.type}-${item.name}-${index}`}
                   className="mb-3 overflow-hidden rounded-xl border border-mera-neutral-200 bg-mera-neutral-100 dark:border-mera-neutral-500 dark:bg-mera-neutral-800"
                 >
                   <View className="p-4">
                     {/* Üst satır: Görsel placeholder + Bilgi */}
                     <View className="flex-row">
-                      {/* Ürün görseli placeholder */}
-                      <View className="mr-3 h-20 w-20 items-center justify-center rounded-xl bg-mera-neutral-200 dark:bg-mera-neutral-950">
-                        <MaterialCommunityIcons
-                          name={item.icon as any}
-                          size={32}
-                          color={accentColor}
+                      {/* Ürün görseli — gerçek görsel yoksa ikonlu placeholder */}
+                      {item.imageUrl ? (
+                        <Image
+                          source={{ uri: item.imageUrl }}
+                          className="mr-3 h-20 w-20 rounded-xl bg-mera-neutral-200 dark:bg-mera-neutral-950"
+                          resizeMode="cover"
                         />
-                      </View>
+                      ) : (
+                        <View className="mr-3 h-20 w-20 items-center justify-center rounded-xl bg-mera-neutral-200 dark:bg-mera-neutral-950">
+                          <MaterialCommunityIcons
+                            name={item.icon as any}
+                            size={32}
+                            color={accentColor}
+                          />
+                        </View>
+                      )}
 
                       {/* Ürün bilgileri */}
                       <View className="flex-1 justify-center">
@@ -535,6 +567,27 @@ export default function GearRecommendationScreen() {
                 />
               }
             />
+          </View>
+        )}
+
+        {error && !isLoading && (
+          <View className="mb-6 rounded-xl border border-mera-status-error/20 bg-mera-status-error/10 p-4">
+            <Typography
+              variant="body"
+              className="font-inter-semibold text-mera-status-error"
+            >
+              Öneri alınamadı.
+            </Typography>
+            <Typography variant="caption" className="mt-1 text-mera-status-error">
+              {error}
+            </Typography>
+            <View className="mt-3">
+              <Button
+                variant="secondary"
+                title="Tekrar Dene"
+                onPress={retry}
+              />
+            </View>
           </View>
         )}
       </ScrollView>

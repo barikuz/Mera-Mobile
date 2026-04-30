@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 
 import Button from "@/components/ui/Button";
@@ -13,56 +13,15 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import { useFishSpecies } from "@/hooks/useCatalog";
+import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
+import { useSpotRecommendation } from "@/hooks/useSpotRecommendation";
+import { Coordinates, RecommendedSpot } from "@/store/useAssistantStore";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
-// ── Statik Mock Veri ──────────────────────────────────────────────────────────
-interface MeraSuggestion {
-  id: string;
-  name: string;
-  description: string;
-  waterType: "Tatlı Su" | "Tuzlu Su" | "Akarsu";
-  depthRange: string;
-  coordinate: { latitude: number; longitude: number };
-}
-
-const MOCK_SUGGESTIONS: MeraSuggestion[] = [
-  {
-    id: "1",
-    name: "Keban Barajı Çıkışı",
-    description:
-      "Baraj çıkışındaki akıntı bölgesi, özellikle sabah saatlerinde yoğun sazan ve şabut aktivitesi gözlemlenir.",
-    waterType: "Tatlı Su",
-    depthRange: "2m – 15m",
-    coordinate: { latitude: 38.7936, longitude: 38.7289 },
-  },
-  {
-    id: "2",
-    name: "Hazar Gölü Kuzey Kıyısı",
-    description:
-      "Rüzgar korunaklı kuzey kıyısı, durgun su koşullarında levrek avı için idealdir.",
-    waterType: "Tatlı Su",
-    depthRange: "5m – 30m",
-    coordinate: { latitude: 38.5095, longitude: 39.3826 },
-  },
-  {
-    id: "3",
-    name: "Palu Çayı Kavşağı",
-    description:
-      "Murat Nehri ile Palu Çayı'nın birleştiği nokta; akarsuda alabalık ve capoeta avına uygundur.",
-    waterType: "Akarsu",
-    depthRange: "1m – 4m",
-    coordinate: { latitude: 38.6912, longitude: 39.9312 },
-  },
-];
-
 // ── Su Tipi Rozeti Renkleri ───────────────────────────────────────────────────
-const WATER_TYPE_STYLES: Record<
-  MeraSuggestion["waterType"],
-  { bg: string; text: string }
-> = {
+const WATER_TYPE_STYLES: Record<string, { bg: string; text: string }> = {
   "Tatlı Su": {
     bg: "bg-mera-status-info/20",
     text: "text-mera-status-info",
@@ -77,29 +36,42 @@ const WATER_TYPE_STYLES: Record<
   },
 };
 
+const getWaterTypeStyles = (waterType: string) =>
+  WATER_TYPE_STYLES[waterType] ?? {
+    bg: "bg-mera-status-info/20",
+    text: "text-mera-status-info",
+  };
+
 // ── Ana Ekran Bileşeni ────────────────────────────────────────────────────────
 export default function SpotRecommendationScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const accentColor = isDark ? COLORS.dark.iconActive : COLORS.light.iconActive;
   const fishSpeciesQuery = useFishSpecies();
-  const fishSpeciesItems = fishSpeciesQuery.data?.map((item) => item.name) ?? [];
+  const fishSpeciesItems =
+    fishSpeciesQuery.data?.map((item) => item.name) ?? [];
+  const {
+    data: spotResults,
+    lastRequest,
+    isLoading,
+    error,
+    getRecommendation,
+    retry,
+  } = useSpotRecommendation();
 
   // ── AI Öneri Durumu ─────────────────────────────────────────────────────────
-  const [isLoading, setIsLoading] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [selectedFish, setSelectedFish] = useState<string | null>(null);
-  const [selectedCoordinate, setSelectedCoordinate] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-  const [pendingCoordinate, setPendingCoordinate] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
+  const [selectedFish, setSelectedFish] = useState<string | null>(
+    lastRequest?.targetFish ?? null,
+  );
+  const [selectedCoordinate, setSelectedCoordinate] =
+    useState<Coordinates | null>(lastRequest?.coordinates ?? null);
+  const [pendingCoordinate, setPendingCoordinate] =
+    useState<Coordinates | null>(null);
 
   // ── Harita Modalı için Seçili Mera ──────────────────────────────────────────
-  const [selectedMera, setSelectedMera] = useState<MeraSuggestion | null>(null);
+  const [selectedMera, setSelectedMera] = useState<RecommendedSpot | null>(
+    null,
+  );
 
   // ── Mera Keşfi (orijinal harita) expandable overlay ─────────────────────────
   const exploreOverlay = useExpandableOverlay();
@@ -110,21 +82,30 @@ export default function SpotRecommendationScreen() {
   // ── Kart Haritası expandable overlay ────────────────────────────────────────
   const cardMapOverlay = useExpandableOverlay();
 
+  useEffect(() => {
+    if (!lastRequest) {
+      return;
+    }
+
+    setSelectedFish((prev) => prev ?? lastRequest.targetFish);
+    setSelectedCoordinate((prev) => prev ?? lastRequest.coordinates);
+  }, [lastRequest]);
+
   // ── Akıllı Öneri Al butonuna basıldığında ───────────────────────────────────
   const handleGetSuggestions = useCallback(() => {
-    setIsLoading(true);
-    setShowResults(false);
+    if (!selectedFish || !selectedCoordinate) {
+      return;
+    }
 
-    // Simüle loading — 1.5 saniye sonra sonuçları göster
-    setTimeout(() => {
-      setIsLoading(false);
-      setShowResults(true);
-    }, 1500);
-  }, []);
+    void getRecommendation({
+      targetFish: selectedFish,
+      coordinates: selectedCoordinate,
+    });
+  }, [getRecommendation, selectedCoordinate, selectedFish]);
 
   // ── Haritada Gör butonuna basıldığında ──────────────────────────────────────
   const handleShowOnMap = useCallback(
-    (mera: MeraSuggestion) => {
+    (mera: RecommendedSpot) => {
       setSelectedMera(mera);
       cardMapOverlay.expand();
     },
@@ -143,15 +124,12 @@ export default function SpotRecommendationScreen() {
     locationOverlay.expand();
   }, [locationOverlay, selectedCoordinate]);
 
-  const handleCoordinateSelect = useCallback(
-    (coordinate: { latitude: number; longitude: number }) => {
-      setPendingCoordinate({
-        latitude: Number(coordinate.latitude.toFixed(6)),
-        longitude: Number(coordinate.longitude.toFixed(6)),
-      });
-    },
-    [],
-  );
+  const handleCoordinateSelect = useCallback((coordinate: Coordinates) => {
+    setPendingCoordinate({
+      latitude: Number(coordinate.latitude.toFixed(6)),
+      longitude: Number(coordinate.longitude.toFixed(6)),
+    });
+  }, []);
 
   const handleConfirmLocation = useCallback(() => {
     if (!pendingCoordinate) {
@@ -165,6 +143,10 @@ export default function SpotRecommendationScreen() {
   const selectedCoordinateLabel = selectedCoordinate
     ? `Koordinat (${selectedCoordinate.latitude.toFixed(4)}, ${selectedCoordinate.longitude.toFixed(4)})`
     : "Konum seçin...";
+  const lastRequestCoordinateLabel = lastRequest?.coordinates
+    ? `Koordinat (${lastRequest.coordinates.latitude.toFixed(4)}, ${lastRequest.coordinates.longitude.toFixed(4)})`
+    : null;
+  const primaryButtonLabel = spotResults ? "Yeni Öneri Al" : "Akıllı Öneri Al";
 
   return (
     <ScreenContainer>
@@ -239,7 +221,7 @@ export default function SpotRecommendationScreen() {
           </View>
 
           <Button
-            title={isLoading ? "Analiz Ediliyor..." : "Akıllı Öneri Al"}
+            title={isLoading ? "Analiz Ediliyor..." : primaryButtonLabel}
             onPress={handleGetSuggestions}
             disabled={isLoading || !selectedFish || !selectedCoordinate}
             icon={
@@ -283,7 +265,7 @@ export default function SpotRecommendationScreen() {
         )}
 
         {/* ── Mera Kartları ───────────────────────────────────────────────── */}
-        {showResults && !isLoading && (
+        {spotResults && !isLoading && (
           <View className="mb-6">
             <SectionHeader
               icon={
@@ -294,20 +276,22 @@ export default function SpotRecommendationScreen() {
                 />
               }
               title="Önerilen Meralar"
-              badge={`${MOCK_SUGGESTIONS.length} sonuç`}
+              badge={`${spotResults.length} sonuç`}
               variant="subsection"
               className="mb-3"
             />
 
             <View className="mb-3 flex-row flex-wrap gap-1.5">
-              {selectedFish && <StatusBadge label={`🐟 ${selectedFish}`} />}
-              {selectedCoordinate && (
-                <StatusBadge label={`📍 ${selectedCoordinateLabel}`} />
+              {lastRequest?.targetFish && (
+                <StatusBadge label={`🐟 ${lastRequest.targetFish}`} />
+              )}
+              {lastRequestCoordinateLabel && (
+                <StatusBadge label={`📍 ${lastRequestCoordinateLabel}`} />
               )}
             </View>
 
-            {MOCK_SUGGESTIONS.map((mera) => {
-              const waterStyle = WATER_TYPE_STYLES[mera.waterType];
+            {spotResults.map((mera) => {
+              const waterStyle = getWaterTypeStyles(mera.waterType);
 
               return (
                 <View
@@ -381,6 +365,26 @@ export default function SpotRecommendationScreen() {
                 </View>
               );
             })}
+          </View>
+        )}
+
+        {error && !isLoading && (
+          <View className="mb-6 rounded-xl border border-mera-status-error/20 bg-mera-status-error/10 p-4">
+            <Typography
+              variant="body"
+              className="font-inter-semibold text-mera-status-error"
+            >
+              Öneri alınamadı.
+            </Typography>
+            <Typography
+              variant="caption"
+              className="mt-1 text-mera-status-error"
+            >
+              {error}
+            </Typography>
+            <View className="mt-3">
+              <Button variant="secondary" title="Tekrar Dene" onPress={retry} />
+            </View>
           </View>
         )}
 
