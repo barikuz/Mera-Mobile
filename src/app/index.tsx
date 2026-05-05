@@ -28,7 +28,7 @@ export default function AnaSayfaScreen() {
   // Konum gösterimi
   const renderLocation = () => {
     if (isLoading) {
-      const spinnerColor = colorScheme === "dark" ? "#E1AA74" : "#192655";
+      const spinnerColor = colorScheme === "dark" ? "#00ccb2" : "#192655";
       return <ActivityIndicator size="small" color={spinnerColor} />;
     }
     if (permissionDenied) {

@@ -13,9 +13,9 @@ export const COLORS = {
   dark: {
     tabBarBackground: "#0F162A", // Karanlık mod uygulama zemin rengi (mera-neutral-950)
     tabBarBorder: "#1E2A45", // Keskinliği azaltmak ve derinlik katmak adına arka plandan çok hafif daha açık bir ton
-    iconActive: "#E1AA74", // Aktif sekme ikonu rengi (Koyu lacivert üzerinde dikkat çeken sıcak vurgu rengi - mera-accent)
+    iconActive: "#00ccb2", // Aktif sekme ikonu rengi (Koyu lacivert üzerinde dikkat çeken vurgu rengi - mera-accent)
     iconInactive: "#64748B", // Pasif sekme ikonu rengi (mera-neutral-500)
-    labelActive: "#E1AA74", // Aktif sekme metni rengi
+    labelActive: "#00ccb2", // Aktif sekme metni rengi
     labelInactive: "#64748B", // Pasif sekme metni rengi
   },
 } as const;
