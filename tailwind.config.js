@@ -6,7 +6,7 @@ module.exports = {
       colors: {
         mera: {
           primary: "#192655", // Ana Renk
-          accent: "#E1AA74", // Vurgu Rengi
+          accent: "#00ccb2", // Vurgu Rengi
 
           // Nötr Tonlar (Metinler, Kenarlıklar ve Arka Planlar için)
           neutral: {

@@ -3,18 +3,18 @@
  * Tam ekran merkezleme ile kullanılır — örneğin bir API isteği beklenirken.
  * Renk olarak mera-primary kullanılarak marka tutarlılığı sağlanır.
  */
-import React from 'react';
-import { ActivityIndicator, useColorScheme, View } from 'react-native';
+import React from "react";
+import { ActivityIndicator, useColorScheme, View } from "react-native";
 
 interface LoaderProps {
   /** Döndürücü boyutu — varsayılan olarak 'large' kullanılır */
-  size?: 'small' | 'large';
+  size?: "small" | "large";
 }
 
-export default function Loader({ size = 'large' }: LoaderProps) {
+export default function Loader({ size = "large" }: LoaderProps) {
   const scheme = useColorScheme();
   // Açık modda ana renk, karanlık modda vurgu rengi — koyu zeminde primary görünmez olur
-  const spinnerColor = scheme === 'dark' ? '#E1AA74' : '#192655';
+  const spinnerColor = scheme === "dark" ? "#00ccb2" : "#192655";
 
   return (
     // flex-1: Mevcut alanın tamamını kaplar, items/justify-center: tam ortalar
