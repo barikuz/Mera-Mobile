@@ -24,7 +24,7 @@ import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import { useAuthStore } from "@/store/useAuthStore";
 
 type CreateCatchPayload = {
-  species: string;
+  species_id: string | null;
   weight_kg: number | null;
   length_cm: number | null;
   location_lat: number | null;
@@ -50,7 +50,7 @@ async function createCatch(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      species: payload.species,
+      species_id: payload.species_id,
       weight_kg: payload.weight_kg,
       length_cm: payload.length_cm,
       location_lat: payload.location_lat,
@@ -180,7 +180,8 @@ export default function AddCatchScreen() {
     [fishSpeciesQuery.data],
   );
 
-  const [species, setSpecies] = useState("");
+  const [speciesId, setSpeciesId] = useState<string | null>(null);
+  const [speciesName, setSpeciesName] = useState("");
   const [isOtherSpeciesSelected, setIsOtherSpeciesSelected] = useState(false);
   const [weightKg, setWeightKg] = useState<number | null>(null);
   const [lengthCm, setLengthCm] = useState<number | null>(null);
@@ -210,32 +211,33 @@ export default function AddCatchScreen() {
     return { latitude: pendingLocationLat, longitude: pendingLocationLng };
   }, [pendingLocationLat, pendingLocationLng]);
 
-  const isSpeciesValid = species.trim().length > 0;
+  const isSpeciesValid = isOtherSpeciesSelected
+    ? speciesName.trim().length > 0
+    : speciesId !== null && speciesId.trim().length > 0;
 
   const createCatchMutation = useMutation({
     mutationFn: createCatch,
   });
 
-  const resetForm = () => {
-    setSpecies("");
-    setIsOtherSpeciesSelected(false);
-    setWeightKg(null);
-    setLengthCm(null);
-    setLocationLat(null);
-    setLocationLng(null);
-    setPendingLocationLat(null);
-    setPendingLocationLng(null);
-  };
-
   const handleSpeciesSelect = (option: string) => {
     if (option === "Diğer") {
       setIsOtherSpeciesSelected(true);
-      setSpecies("");
+      setSpeciesId(null);
+      setSpeciesName("");
       return;
     }
 
     setIsOtherSpeciesSelected(false);
-    setSpecies(option);
+
+    // Find the species ID from the catalog
+    const selectedSpecies = fishSpeciesQuery.data?.find(
+      (item) => item.name === option,
+    );
+
+    if (selectedSpecies) {
+      setSpeciesId(String(selectedSpecies.id));
+      setSpeciesName(option);
+    }
   };
 
   const openMap = () => {
@@ -272,8 +274,28 @@ export default function AddCatchScreen() {
     }
 
     try {
+      // For "Other" species, attempt to find its ID from the catalog
+      let finalSpeciesId = speciesId;
+      if (isOtherSpeciesSelected && finalSpeciesId === null) {
+        const otherSpecies = fishSpeciesQuery.data?.find(
+          (item) => item.name === "Diğer",
+        );
+        if (otherSpecies) {
+          finalSpeciesId = String(otherSpecies.id);
+        }
+      }
+
+      // If still no ID found (for truly custom "Other" entry without predefined ID)
+      if (finalSpeciesId === null && isOtherSpeciesSelected) {
+        Alert.alert(
+          "Uyarı",
+          "Seçili tür sisteme kaydedilemedi. Lütfen listeden bir tür seçiniz.",
+        );
+        return;
+      }
+
       await createCatchMutation.mutateAsync({
-        species: species.trim(),
+        species_id: finalSpeciesId,
         weight_kg: weightKg,
         length_cm: lengthCm,
         location_lat: locationLat,
@@ -337,7 +359,7 @@ export default function AddCatchScreen() {
                 const isSelected =
                   option === "Diğer"
                     ? isOtherSpeciesSelected
-                    : !isOtherSpeciesSelected && species === option;
+                    : !isOtherSpeciesSelected && speciesName === option;
 
                 return (
                   <TouchableOpacity
@@ -368,8 +390,8 @@ export default function AddCatchScreen() {
               <Input
                 label="Diğer tür"
                 placeholder="Balık türünü yazın"
-                value={species}
-                onChangeText={setSpecies}
+                value={speciesName}
+                onChangeText={setSpeciesName}
                 autoCapitalize="words"
               />
             ) : null}
