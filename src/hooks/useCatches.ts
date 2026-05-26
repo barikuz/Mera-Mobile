@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuthStore } from "@/store/useAuthStore";
+import { useFishSpecies } from "./useCatalog";
 
 export type CatchItem = {
   id: string;
   species: string;
+  species_id: string | null;
   created_at: string | null;
   weight_kg: number | null;
   length_cm: number | null;
@@ -67,7 +69,8 @@ async function fetchCatches(): Promise<CatchItem[]> {
 
   return records.map((item, index) => {
     const record = item as Record<string, unknown>;
-    const rawSpecies = record.species;
+    const rawSpeciesId = record.species_id;
+    
     const rawDate =
       typeof record.created_at === "string"
         ? record.created_at
@@ -82,10 +85,8 @@ async function fetchCatches(): Promise<CatchItem[]> {
         typeof record.id === "string" || typeof record.id === "number"
           ? String(record.id)
           : `${index}-${rawDate ?? "catch"}`,
-      species:
-        typeof rawSpecies === "string" && rawSpecies.trim().length > 0
-          ? rawSpecies.trim()
-          : "Bilinmeyen Tür",
+      species: "", // Will be populated by useCatches hook with species catalog data
+      species_id: typeof rawSpeciesId === "string" ? rawSpeciesId : null,
       created_at: rawDate,
       weight_kg: typeof record.weight_kg === "number" ? record.weight_kg : null,
       length_cm: typeof record.length_cm === "number" ? record.length_cm : null,
@@ -99,6 +100,7 @@ async function fetchCatches(): Promise<CatchItem[]> {
 
 export function useCatches() {
   const { user, session, isInitialized } = useAuthStore();
+  const fishSpeciesQuery = useFishSpecies();
 
   return useQuery({
     queryKey: ["catches"],
@@ -106,5 +108,23 @@ export function useCatches() {
     enabled: isInitialized && !!user?.id && !!session?.access_token,
     staleTime: 15_000,
     gcTime: 60_000,
+    select: (catches) => {
+      // Create a map of species_id to species name for quick lookup
+      const speciesMap = new Map<string, string>();
+      
+      if (Array.isArray(fishSpeciesQuery.data)) {
+        fishSpeciesQuery.data.forEach((species) => {
+          speciesMap.set(String(species.id), species.name);
+        });
+      }
+      
+      // Map catches and populate species names from the catalog
+      return catches.map((catchItem) => ({
+        ...catchItem,
+        species: catchItem.species_id 
+          ? (speciesMap.get(catchItem.species_id) || "Bilinmeyen Tür")
+          : "Bilinmeyen Tür",
+      }));
+    },
   });
 }
