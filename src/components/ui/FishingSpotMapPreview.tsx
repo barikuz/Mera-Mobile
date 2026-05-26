@@ -69,6 +69,8 @@ export default function FishingSpotMapPreview({
       }
     : MAP_INITIAL_REGION;
 
+  const resolvedRegion = initialRegion ?? MAP_INITIAL_REGION;
+
   return (
     <TouchableOpacity
       onPressIn={handlePressIn}
@@ -78,6 +80,7 @@ export default function FishingSpotMapPreview({
     >
       <View style={styles.container}>
         <MapView
+          key={`${resolvedRegion.latitude}-${resolvedRegion.longitude}`}
           style={styles.map}
           initialRegion={initialRegion}
           showsUserLocation={showsUserLocation}
