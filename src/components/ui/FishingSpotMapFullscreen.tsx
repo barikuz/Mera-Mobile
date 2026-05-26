@@ -101,6 +101,7 @@ export default function FishingSpotMapFullscreen({
       ? COLORS.dark.iconInactive
       : COLORS.light.iconInactive;
   const textPrimary = colorScheme === "dark" ? "#F8FAFC" : "#192655";
+  const resolvedRegion = selectedCoordinate ?? MAP_INITIAL_REGION;
 
   // useFishingSpots hook'u: Backend'den balıkçılık noktalarını fetch eder
   // spots: FishingSpot[], loading: boolean, error: string | null, refetch: () => void
@@ -310,6 +311,7 @@ export default function FishingSpotMapFullscreen({
       <Animated.View style={[styles.container, animatedOverlayStyle]}>
         <Animated.View style={[styles.mapContainer, animatedMapStyle]}>
           <MapView
+            key={`${resolvedRegion.latitude}-${resolvedRegion.longitude}`}
             style={styles.fullscreenMap}
             initialRegion={mapInitialRegion}
             showsUserLocation={true}
