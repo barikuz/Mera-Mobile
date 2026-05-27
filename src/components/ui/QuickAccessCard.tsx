@@ -35,7 +35,8 @@ export default function QuickAccessCard({
     >
       {/* Ikon kutusu — merkezi, yuvarlak arka plan */}
       <View
-        className={`w-14 h-14 rounded-2xl items-center justify-center mb-3 ${iconBgClass}`}
+        className={`w-14 h-14 rounded-2xl mb-3 ${iconBgClass}`}
+        style={{ alignItems: "center", justifyContent: "center", alignSelf: "center" }}
       >
         {icon}
       </View>

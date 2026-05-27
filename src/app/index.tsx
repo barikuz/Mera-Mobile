@@ -280,11 +280,22 @@ export default function AnaSayfaScreen() {
         {/* ═══════════════════════════════════════════════════════
             § 1 — Selamlama + Konum
             ═══════════════════════════════════════════════════════ */}
-        <View className="mb-6">
-          <Typography variant="caption" className="mb-1 text-xs">
-            Rast gele 🎣
-          </Typography>
-          <Typography variant="h1" className="mb-3">
+        <View className="mb-6 items-center">
+          <View className="flex-row items-center justify-center">
+            <View className="w-12 items-end pr-2">
+              <Typography variant="h1" className="mb-1">
+                🎣
+              </Typography>
+            </View>
+            <Typography variant="h1" className="mb-1 text-center">
+              Rastgele
+            </Typography>
+            <View className="w-12" />
+          </View>
+          <Typography
+            variant="body"
+            className="mb-3 text-center text-mera-neutral-600 dark:text-mera-neutral-400"
+          >
             {displayName || "Balıkçı"}!
           </Typography>
           {renderLocation()}
@@ -293,9 +304,9 @@ export default function AnaSayfaScreen() {
         {/* ═══════════════════════════════════════════════════════
             § 2 — Hızlı Erişim Grid (2×2)
             ═══════════════════════════════════════════════════════ */}
-        <View className="mb-8">
+        <View className="mb-8 px-1">
           {/* Üst Satır */}
-          <View className="mb-3 flex-row gap-3">
+          <View className="mb-4 flex-row" style={{ gap: 12 }}>
             <QuickAccessCard
               title="Harita"
               description="Av bölgelerini keşfedin"
@@ -319,10 +330,10 @@ export default function AnaSayfaScreen() {
           </View>
 
           {/* Alt Satır */}
-          <View className="flex-row gap-3">
+          <View className="flex-row" style={{ gap: 12 }}>
             <QuickAccessCard
               title="Asistan"
-              description="Yapay zeka yardimi"
+              description="Yapay zeka yardımı"
               icon={
                 <MaterialIcons name="assistant" size={26} color={iconColor} />
               }
@@ -331,7 +342,7 @@ export default function AnaSayfaScreen() {
             />
             <QuickAccessCard
               title="Av İstatistikleri"
-              description="Performansinizi takip edin"
+              description="Performansınızı takip edin"
               icon={
                 <Ionicons
                   name="stats-chart-outline"
