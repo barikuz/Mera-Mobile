@@ -71,7 +71,7 @@ export default function SpotCard({
           </View>
 
           {/* Su tipi rozeti */}
-          <View className="mb-3">
+          <View className="mb-3 flex-row">
             <StatusBadge
               label={waterType}
               bgClass="bg-mera-primary/8 dark:bg-mera-accent/25 rounded-lg"

@@ -387,7 +387,7 @@ export default function AnaSayfaScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingRight: 16 }}
           >
-            <View className="flex-row gap-3">
+            <View className="flex-row" style={{ gap: 12 }}>
               {formattedNearestSpots.map((spot) => (
                 <SpotCard
                   key={spot.id}
@@ -463,7 +463,7 @@ export default function AnaSayfaScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingRight: 16 }}
             >
-              <View className="flex-row gap-3">
+              <View className="flex-row" style={{ gap: 12 }}>
                 {mockGearRecommendations.map((item) => (
                   <RecentGearRecommendationCard
                     key={item.id}
@@ -515,7 +515,7 @@ export default function AnaSayfaScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingRight: 16 }}
             >
-              <View className="flex-row gap-3">
+              <View className="flex-row" style={{ gap: 12 }}>
                 {formattedPopularSpots.map((spot) => (
                   <SpotCard
                     key={spot.id}
@@ -531,7 +531,7 @@ export default function AnaSayfaScreen() {
 
           {/* En Çok Satılan Ürünler */}
           <View className="mb-6">
-            <View className="mb-5 flex-row items-center">
+            <View className="mb-3 flex-row items-center">
               <View
                 className="mr-2 h-1.5 w-1.5 rounded-full"
                 style={{
@@ -545,7 +545,10 @@ export default function AnaSayfaScreen() {
                 En çok satılan ürünler
               </Typography>
             </View>
-            <View className="flex-row flex-wrap justify-between gap-3">
+            <View
+              className="flex-row flex-wrap justify-between"
+              style={{ gap: 12 }}
+            >
               {mockPopularProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -558,7 +561,7 @@ export default function AnaSayfaScreen() {
 
           {/* En Çok Tutulan Balıklar */}
           <View>
-            <View className="mb-3 flex-row items-center">
+            <View className="mb-2 flex-row items-center">
               <View
                 className="mr-2 h-1.5 w-1.5 rounded-full"
                 style={{
@@ -572,7 +575,7 @@ export default function AnaSayfaScreen() {
                 En çok tutulan balıklar
               </Typography>
             </View>
-            <View className="flex-row flex-wrap gap-2">
+            <View className="flex-row flex-wrap">
               {mockTopFishes.map((fish, index) => (
                 <FishBadge key={fish} name={fish} rank={index + 1} />
               ))}
