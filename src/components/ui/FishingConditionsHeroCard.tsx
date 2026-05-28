@@ -36,19 +36,19 @@ const STATUS_CONFIG: Record<
 > = {
   good: {
     label: "Yüksek",
-    statusLabel: "Balik aktivitesi yuksek",
+    statusLabel: "Balık Aktivitesi Yüksek",
     glowColor: "#10B981",
     iconName: "checkmark-circle",
   },
   okay: {
     label: "Orta",
-    statusLabel: "Orta seviye aktivite",
+    statusLabel: "Orta Seviye Aktivite",
     glowColor: "#F59E0B",
     iconName: "alert-circle",
   },
   poor: {
     label: "Düşük",
-    statusLabel: "Aktivite dusuk",
+    statusLabel: "Aktivite Düşük",
     glowColor: "#EF4444",
     iconName: "close-circle",
   },
@@ -125,7 +125,7 @@ export default function FishingConditionsHeroCard({
                 variant="caption"
                 className="ml-1.5 text-xs text-white/60"
               >
-                Konum bazlı güncel av koşulları
+                Konum Bazlı Güncel Av Koşulları
               </Typography>
             </View>
             <Typography variant="h2" className="text-lg text-white">

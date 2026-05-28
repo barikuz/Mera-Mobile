@@ -24,10 +24,12 @@ import RecentGearRecommendationCard from "@/components/ui/RecentGearRecommendati
 import RecentSpotRecommendationCard from "@/components/ui/RecentSpotRecommendationCard";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import SectionHeader from "@/components/ui/SectionHeader";
+import SkeletonBlock from "@/components/ui/SkeletonBlock";
 import SpotCard from "@/components/ui/SpotCard";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
+import { useFishingConditions } from "@/hooks/useFishingConditions";
 import { useLocation } from "@/hooks/useLocation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
@@ -42,14 +44,6 @@ type ConditionsStatus = "good" | "okay" | "poor";
 // ────────────────────────────────────────────────────────────────
 // Mock veriler
 // ────────────────────────────────────────────────────────────────
-
-const mockConditions = {
-  status: "good" as ConditionsStatus,
-  temperature: 18,
-  windSpeed: 3,
-  pressure: 1016,
-  summary: "Hafif rüzgar ve stabil basınç, sabah ve akşam verimli.",
-};
 
 const mockNearestSpots = [
   {
@@ -167,7 +161,15 @@ export default function AnaSayfaScreen() {
   const isDark = themeMode === "dark";
   const router = useRouter();
   const { user } = useAuthStore();
-  const { locationName, isLoading, permissionDenied } = useLocation();
+  const { locationName, isLoading, permissionDenied, coords } = useLocation();
+
+  // ── Av koşulları verisi ──────────────────────────────────────
+  const {
+    data: conditionsData,
+    isLoading: conditionsLoading,
+    error: conditionsError,
+    refetch: refetchConditions,
+  } = useFishingConditions(coords);
   const addToCart = useCartStore((state) => state.addToCart);
   const mapOverlay = useExpandableOverlay();
   const [mapMode, setMapMode] = useState<"spots" | "coordinate">("spots");
@@ -201,9 +203,9 @@ export default function AnaSayfaScreen() {
   // ── Pull-to-refresh ──────────────────────────────────────────
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // Simüle: Gerçek API entegrasyonunda burada refetch çağrılır
+    refetchConditions();
     setTimeout(() => setRefreshing(false), 1200);
-  }, []);
+  }, [refetchConditions]);
 
   // ── Memoize edilmiş veri dönüşümleri ─────────────────────────
   const formattedNearestSpots = useMemo(
@@ -349,7 +351,90 @@ export default function AnaSayfaScreen() {
             § 3 — Av Koşulları Hero Kartı
             ═══════════════════════════════════════════════════════ */}
         <View className="mb-8">
-          <FishingConditionsHeroCard conditions={mockConditions} />
+          {conditionsLoading ? (
+            // Yükleme iskeleti — kartın yaklaşık yüksekliğini tutar
+            <View
+              style={{
+                overflow: "hidden",
+                borderRadius: 24,
+                backgroundColor: "#192655",
+                padding: 20,
+              }}
+            >
+              {/* Üst satır: başlık + durum göstergesi */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 16,
+                }}
+              >
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <SkeletonBlock
+                    className="rounded-md"
+                    style={{ height: 12, width: "40%", marginBottom: 8 }}
+                  />
+                  <SkeletonBlock
+                    className="rounded-md"
+                    style={{ height: 20, width: "60%" }}
+                  />
+                </View>
+                <SkeletonBlock
+                  className="rounded-full"
+                  style={{ height: 48, width: 48 }}
+                />
+              </View>
+
+              {/* Özet metni */}
+              <SkeletonBlock
+                className="rounded-md"
+                style={{ height: 14, width: "80%", marginBottom: 16 }}
+              />
+
+              {/* Metrik bloğu */}
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <SkeletonBlock
+                  className="rounded-2xl"
+                  style={{ height: 64, flex: 1 }}
+                />
+                <SkeletonBlock
+                  className="rounded-2xl"
+                  style={{ height: 64, flex: 1 }}
+                />
+                <SkeletonBlock
+                  className="rounded-2xl"
+                  style={{ height: 64, flex: 1 }}
+                />
+              </View>
+            </View>
+          ) : conditionsError ? (
+            // Hata durumu — kullanıcı dostu fallback
+            <View className="items-center overflow-hidden rounded-3xl bg-[#192655] p-6">
+              <Ionicons
+                name="cloud-offline-outline"
+                size={36}
+                color="rgba(255,255,255,0.45)"
+              />
+              <Typography
+                variant="caption"
+                className="mb-3 mt-2 text-center text-sm text-white/60"
+              >
+                Av koşulları yüklenemedi.
+              </Typography>
+              <Button
+                title="Tekrar Dene"
+                onPress={refetchConditions}
+                style={{
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.80)"
+                    : "rgba(255,255,255,0.18)",
+                }}
+              />
+            </View>
+          ) : conditionsData ? (
+            <FishingConditionsHeroCard conditions={conditionsData} />
+          ) : null}
         </View>
 
         {/* ═══════════════════════════════════════════════════════

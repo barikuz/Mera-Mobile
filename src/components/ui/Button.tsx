@@ -31,7 +31,7 @@ const styles = {
     // Dolgulu arka plan (mera-primary), yuvarlak köşeler, dikey iç boşluk
     // dark: Vurgu rengi (accent) arka plan — koyu zeminde daha görünür
     container:
-      "bg-mera-primary dark:bg-mera-accent rounded-lg py-4 items-center",
+      "bg-mera-primary dark:bg-mera-accent rounded-lg py-4 px-6 items-center",
     // Beyaz metin (açık mod), koyu metin (karanlık mod — açık arka plan üzerinde okunabilirlik)
     text: "text-white dark:text-mera-neutral-900 text-base font-inter-semibold",
   },
@@ -39,7 +39,7 @@ const styles = {
     // Şeffaf arka plan, mera-primary kenarlık — düşük vurgulu görünüm
     // dark: Vurgu rengi kenarlık — koyu zeminde lacivert kenarlık görünmez olurdu
     container:
-      "border border-mera-primary dark:border-mera-accent rounded-lg py-3 items-center bg-transparent",
+      "border border-mera-primary dark:border-mera-accent rounded-lg py-3 px-6 items-center bg-transparent",
     // Marka rengi metin (açık mod), vurgu rengi metin (karanlık mod — kenarlıkla uyumlu)
     text: "text-mera-primary dark:text-mera-accent text-base font-inter-semibold",
   },
