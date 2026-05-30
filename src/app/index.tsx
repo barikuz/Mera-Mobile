@@ -30,6 +30,7 @@ import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import { useFishingConditions } from "@/hooks/useFishingConditions";
+import { useLatestCatch } from "@/hooks/useCatches";
 import { useLocation } from "@/hooks/useLocation";
 import { useNearestSpots } from "@/hooks/useNearestSpots";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -48,12 +49,6 @@ type ConditionsStatus = "good" | "okay" | "poor";
 
 
 
-const mockRecentCatch = {
-  species: "Levrek",
-  weightKg: 1.8,
-  date: "10 Mayis 2026, 07:45",
-  location: "Kilyos Koyu",
-};
 
 const mockRecommendedSpot = {
   name: "Rumelifeneri",
@@ -162,6 +157,14 @@ export default function AnaSayfaScreen() {
   const [mapMode, setMapMode] = useState<"spots" | "coordinate">("spots");
   const [selectedCoordinate, setSelectedCoordinate] =
     useState<Coordinate | null>(null);
+  // ── Son av verisi ────────────────────────────────────────────
+  const {
+    data: latestCatch,
+    isLoading: latestCatchLoading,
+    isError: latestCatchError,
+    refetch: refetchLatestCatch,
+  } = useLatestCatch();
+
   const [refreshing, setRefreshing] = useState(false);
 
   // ── Harita işlevleri ──────────────────────────────────────────
@@ -192,8 +195,9 @@ export default function AnaSayfaScreen() {
     setRefreshing(true);
     refetchConditions();
     refetchNearestSpots();
+    void refetchLatestCatch();
     setTimeout(() => setRefreshing(false), 1200);
-  }, [refetchConditions, refetchNearestSpots]);
+  }, [refetchConditions, refetchNearestSpots, refetchLatestCatch]);
 
   // ── Memoize edilmiş veri dönüşümleri ─────────────────────────
   const formattedPopularSpots = useMemo(
@@ -555,14 +559,64 @@ export default function AnaSayfaScreen() {
 
           {/* Son Av Kartı */}
           <View className="mb-3">
-            {mockRecentCatch ? (
+            {latestCatchLoading ? (
+              // Yükleme iskeleti — kartın layout’unu taklit eder
+              <View className="overflow-hidden rounded-2xl border border-mera-neutral-200 bg-white dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+                <View className="flex-row">
+                  {/* Sol gradient alanı */}
+                  <SkeletonBlock
+                    style={{ width: 80, height: 96 }}
+                    className="rounded-none"
+                  />
+                  {/* Sağ bilgi alanı */}
+                  <View className="flex-1 p-4">
+                    <SkeletonBlock
+                      className="mb-2 rounded-md"
+                      style={{ height: 18, width: "55%" }}
+                    />
+                    <SkeletonBlock
+                      className="mb-3 rounded-md"
+                      style={{ height: 12, width: "70%" }}
+                    />
+                    <View className="flex-row gap-2">
+                      <SkeletonBlock
+                        className="rounded-full"
+                        style={{ height: 24, width: 52 }}
+                      />
+                      <SkeletonBlock
+                        className="rounded-full"
+                        style={{ height: 24, width: 90 }}
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            ) : latestCatchError ? (
+              // Hata durumu — ekranı çökütme, sessiz fallback göster
+              <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-5 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+                <Ionicons
+                  name="cloud-offline-outline"
+                  size={30}
+                  color={isDark ? "#475569" : "#94A3B8"}
+                />
+                <Typography
+                  variant="caption"
+                  className="mb-3 mt-2 text-center text-sm"
+                >
+                  Son av yüklenemedi.
+                </Typography>
+                <Button title="Tekrar Dene" onPress={() => void refetchLatestCatch()} />
+              </View>
+            ) : latestCatch ? (
+              // Başarılı durum — API verisiyle kartı doldur
               <RecentCatchCard
-                species={mockRecentCatch.species}
-                weightKg={mockRecentCatch.weightKg}
-                date={mockRecentCatch.date}
-                location={mockRecentCatch.location}
+                species={latestCatch.species}
+                weightKg={latestCatch.weightKg ?? 0}
+                date={latestCatch.date}
+                location={latestCatch.location}
               />
             ) : (
+              // Boş durum — henüz av kaydı yok
               <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-6 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
                 <MaterialCommunityIcons
                   name="fish-off"
@@ -570,11 +624,11 @@ export default function AnaSayfaScreen() {
                   color={isDark ? "#64748B" : "#94A3B8"}
                 />
                 <Typography variant="caption" className="mb-3 mt-2 text-center">
-                  Henuz bir av kaydin yok.
+                  Henüz bir av kaydın yok.
                 </Typography>
                 <View className="w-full">
                   <Button
-                    title="Ilk avini ekle"
+                    title="İlk avını ekle"
                     onPress={() => router.push("/add-catch")}
                   />
                 </View>
