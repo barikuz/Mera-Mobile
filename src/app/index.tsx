@@ -31,6 +31,7 @@ import { COLORS } from "@/constants/color";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import { useFishingConditions } from "@/hooks/useFishingConditions";
 import { useLocation } from "@/hooks/useLocation";
+import { useNearestSpots } from "@/hooks/useNearestSpots";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
 
@@ -45,29 +46,7 @@ type ConditionsStatus = "good" | "okay" | "poor";
 // Mock veriler
 // ────────────────────────────────────────────────────────────────
 
-const mockNearestSpots = [
-  {
-    id: "spot-1",
-    name: "Kilyos Koyu",
-    distanceKm: 4.2,
-    waterType: "Tuzlu Su",
-    coordinate: { latitude: 41.2496, longitude: 29.0301 },
-  },
-  {
-    id: "spot-2",
-    name: "Sazlidere Golu",
-    distanceKm: 6.8,
-    waterType: "Tatli Su",
-    coordinate: { latitude: 41.0861, longitude: 28.6209 },
-  },
-  {
-    id: "spot-3",
-    name: "Ayvat Bendi",
-    distanceKm: 9.4,
-    waterType: "Akarsu",
-    coordinate: { latitude: 41.2337, longitude: 28.9179 },
-  },
-];
+
 
 const mockRecentCatch = {
   species: "Levrek",
@@ -170,6 +149,14 @@ export default function AnaSayfaScreen() {
     error: conditionsError,
     refetch: refetchConditions,
   } = useFishingConditions(coords);
+
+  // ── En yakın meralar ─────────────────────────────────────────
+  const {
+    spots: nearestSpots,
+    isLoading: nearestSpotsLoading,
+    error: nearestSpotsError,
+    refetch: refetchNearestSpots,
+  } = useNearestSpots(coords);
   const addToCart = useCartStore((state) => state.addToCart);
   const mapOverlay = useExpandableOverlay();
   const [mapMode, setMapMode] = useState<"spots" | "coordinate">("spots");
@@ -204,19 +191,11 @@ export default function AnaSayfaScreen() {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     refetchConditions();
+    refetchNearestSpots();
     setTimeout(() => setRefreshing(false), 1200);
-  }, [refetchConditions]);
+  }, [refetchConditions, refetchNearestSpots]);
 
   // ── Memoize edilmiş veri dönüşümleri ─────────────────────────
-  const formattedNearestSpots = useMemo(
-    () =>
-      mockNearestSpots.map((spot) => ({
-        ...spot,
-        distanceLabel: `${spot.distanceKm.toFixed(1)} km`,
-      })),
-    [],
-  );
-
   const formattedPopularSpots = useMemo(
     () =>
       mockPopularSpots.map((spot) => ({
@@ -456,23 +435,105 @@ export default function AnaSayfaScreen() {
             onAction={openSpotsMap}
           />
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 16 }}
-          >
-            <View className="flex-row gap-3">
-              {formattedNearestSpots.map((spot) => (
-                <SpotCard
-                  key={spot.id}
-                  name={spot.name}
-                  distanceLabel={spot.distanceLabel}
-                  waterType={spot.waterType}
-                  onPress={() => openCoordinateMap(spot.coordinate)}
-                />
-              ))}
+          {nearestSpotsLoading ? (
+            // Yükleme iskeleti — yatay kart sırasını taklit eder
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingRight: 16 }}
+              scrollEnabled={false}
+            >
+              <View className="flex-row gap-3">
+                {[0, 1, 2].map((i) => (
+                  <View
+                    key={i}
+                    style={{
+                      width: 208,
+                      borderRadius: 16,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {/* Gradient vurgu çizgisi */}
+                    <SkeletonBlock style={{ height: 3, borderRadius: 0 }} />
+                    <View style={{ padding: 16 }}>
+                      <SkeletonBlock
+                        className="rounded-md"
+                        style={{ height: 14, width: "70%", marginBottom: 10 }}
+                      />
+                      <SkeletonBlock
+                        className="rounded-lg"
+                        style={{ height: 22, width: "45%", marginBottom: 14 }}
+                      />
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <SkeletonBlock
+                          className="rounded-md"
+                          style={{ height: 12, width: "35%" }}
+                        />
+                        <SkeletonBlock
+                          className="rounded-md"
+                          style={{ height: 12, width: "30%" }}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          ) : nearestSpotsError ? (
+            // Hata durumu — ekranı çökertme, kullanıcı dostu mesaj göster
+            <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-5 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+              <Ionicons
+                name="location-outline"
+                size={30}
+                color={isDark ? "#475569" : "#94A3B8"}
+              />
+              <Typography
+                variant="caption"
+                className="mb-3 mt-2 text-center text-sm"
+              >
+                {nearestSpotsError}
+              </Typography>
+              <Button title="Tekrar Dene" onPress={refetchNearestSpots} />
             </View>
-          </ScrollView>
+          ) : nearestSpots.length === 0 ? (
+            // Boş durum — konuma yakın mera bulunamadı
+            <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-5 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+              <Ionicons
+                name="map-outline"
+                size={30}
+                color={isDark ? "#475569" : "#94A3B8"}
+              />
+              <Typography
+                variant="caption"
+                className="mt-2 text-center text-sm"
+              >
+                Yakınında kayıtlı mera bulunamadı.
+              </Typography>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingRight: 16 }}
+            >
+              <View className="flex-row gap-3">
+                {nearestSpots.map((spot) => (
+                  <SpotCard
+                    key={spot.id}
+                    name={spot.name}
+                    distanceLabel={spot.distanceLabel}
+                    waterType={spot.waterType}
+                    onPress={() => openCoordinateMap(spot.coordinate)}
+                  />
+                ))}
+              </View>
+            </ScrollView>
+          )}
         </View>
 
         {/* ═══════════════════════════════════════════════════════
