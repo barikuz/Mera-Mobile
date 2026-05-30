@@ -18,7 +18,7 @@ import Loader from "@/components/ui/Loader";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
-import { CatchItem, useCatches } from "@/hooks/useCatches";
+import { CatchItem, formatCatchDate, useCatches } from "@/hooks/useCatches";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import { useAuthStore } from "@/store/useAuthStore";
 import { supabase } from "../../lib/supabase";
@@ -191,25 +191,6 @@ export default function ProfileScreen() {
   const mostCaughtSpecies = speciesStats[0]?.species ?? "-";
   const isCatchListEmpty =
     !isLoadingCatches && !hasCatchesError && totalCatchCount === 0;
-
-  const formatCatchDate = (dateValue: string | null) => {
-    if (!dateValue) {
-      return "Tarih bilgisi yok";
-    }
-
-    const parsedDate = new Date(dateValue);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return "Tarih bilgisi yok";
-    }
-
-    return new Intl.DateTimeFormat("tr-TR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(parsedDate);
-  };
 
   const renderCatchItem = ({ item }: { item: CatchItem }) => {
     const hasLocation =
