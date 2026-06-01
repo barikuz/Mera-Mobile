@@ -268,11 +268,22 @@ export default function AnaSayfaScreen() {
         {/* ═══════════════════════════════════════════════════════
             § 1 — Selamlama + Konum
             ═══════════════════════════════════════════════════════ */}
-        <View className="mb-6">
-          <Typography variant="caption" className="mb-1 text-xs">
-            Rast gele 🎣
-          </Typography>
-          <Typography variant="h1" className="mb-3">
+        <View className="mb-6 items-center">
+          <View className="flex-row items-center justify-center">
+            <View className="w-12 items-end pr-2">
+              <Typography variant="h1" className="mb-1">
+                🎣
+              </Typography>
+            </View>
+            <Typography variant="h1" className="mb-1 text-center">
+              Rastgele
+            </Typography>
+            <View className="w-12" />
+          </View>
+          <Typography
+            variant="body"
+            className="mb-3 text-center text-mera-neutral-600 dark:text-mera-neutral-400"
+          >
             {displayName || "Balıkçı"}!
           </Typography>
           {renderLocation()}
@@ -281,9 +292,9 @@ export default function AnaSayfaScreen() {
         {/* ═══════════════════════════════════════════════════════
             § 2 — Hızlı Erişim Grid (2×2)
             ═══════════════════════════════════════════════════════ */}
-        <View className="mb-8">
+        <View className="mb-8 px-1">
           {/* Üst Satır */}
-          <View className="mb-3 flex-row gap-3">
+          <View className="mb-4 flex-row" style={{ gap: 12 }}>
             <QuickAccessCard
               title="Harita"
               description="Av bölgelerini keşfedin"
@@ -307,10 +318,10 @@ export default function AnaSayfaScreen() {
           </View>
 
           {/* Alt Satır */}
-          <View className="flex-row gap-3">
+          <View className="flex-row" style={{ gap: 12 }}>
             <QuickAccessCard
               title="Asistan"
-              description="Yapay zeka yardimi"
+              description="Yapay zeka yardımı"
               icon={
                 <MaterialIcons name="assistant" size={26} color={iconColor} />
               }
@@ -319,7 +330,7 @@ export default function AnaSayfaScreen() {
             />
             <QuickAccessCard
               title="Av İstatistikleri"
-              description="Performansinizi takip edin"
+              description="Performansınızı takip edin"
               icon={
                 <Ionicons
                   name="stats-chart-outline"
@@ -450,7 +461,7 @@ export default function AnaSayfaScreen() {
               contentContainerStyle={{ paddingRight: 16 }}
               scrollEnabled={false}
             >
-              <View className="flex-row gap-3">
+              <View className="flex-row" style={{ gap: 12 }}>
                 {[0, 1, 2].map((i) => (
                   <View
                     key={i}
@@ -528,7 +539,7 @@ export default function AnaSayfaScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingRight: 16 }}
             >
-              <View className="flex-row gap-3">
+              <View className="flex-row" style={{ gap: 12 }}>
                 {nearestSpots.map((spot) => (
                   <SpotCard
                     key={spot.id}
@@ -581,7 +592,7 @@ export default function AnaSayfaScreen() {
                       className="mb-3 rounded-md"
                       style={{ height: 12, width: "70%" }}
                     />
-                    <View className="flex-row gap-2">
+                    <View className="flex-row" style={{ gap: 8 }}>
                       <SkeletonBlock
                         className="rounded-full"
                         style={{ height: 24, width: 52 }}
@@ -712,7 +723,7 @@ export default function AnaSayfaScreen() {
                 contentContainerStyle={{ paddingRight: 16 }}
                 scrollEnabled={false}
               >
-                <View className="flex-row gap-3">
+                <View className="flex-row" style={{ gap: 12 }}>
                   {[0, 1, 2].map((i) => (
                     <View
                       key={i}
@@ -756,7 +767,7 @@ export default function AnaSayfaScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingRight: 16 }}
               >
-                <View className="flex-row gap-3">
+                <View className="flex-row" style={{ gap: 12 }}>
                   {gearRecommendation.lastResult.map((item) => (
                     <RecentGearRecommendationCard
                       key={item.type}
@@ -824,7 +835,7 @@ export default function AnaSayfaScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingRight: 16 }}
             >
-              <View className="flex-row gap-3">
+              <View className="flex-row" style={{ gap: 12 }}>
                 {formattedPopularSpots.map((spot) => (
                   <SpotCard
                     key={spot.id}
@@ -840,7 +851,7 @@ export default function AnaSayfaScreen() {
 
           {/* En Çok Satılan Ürünler */}
           <View className="mb-6">
-            <View className="mb-5 flex-row items-center">
+            <View className="mb-3 flex-row items-center">
               <View
                 className="mr-2 h-1.5 w-1.5 rounded-full"
                 style={{
@@ -857,7 +868,10 @@ export default function AnaSayfaScreen() {
 
             {topProductsLoading ? (
               // Yükleme iskeleti — 2 sütunlu ürün grid'ini taklit eder
-              <View className="flex-row flex-wrap justify-between gap-3">
+              <View
+                className="flex-row flex-wrap justify-between"
+                style={{ gap: 12 }}
+              >
                 {[0, 1, 2, 3].map((i) => (
                   <View
                     key={i}
@@ -908,7 +922,10 @@ export default function AnaSayfaScreen() {
               </View>
             ) : topProducts && topProducts.length > 0 ? (
               // Başarılı durum — API verisiyle kartları doldur
-              <View className="flex-row flex-wrap justify-between gap-3">
+              <View
+                className="flex-row flex-wrap justify-between"
+                style={{ gap: 12 }}
+              >
                 {topProducts.map((product) => (
                   <ProductCard
                     key={product.id}
@@ -937,7 +954,7 @@ export default function AnaSayfaScreen() {
 
           {/* En Çok Tutulan Balıklar */}
           <View>
-            <View className="mb-3 flex-row items-center">
+            <View className="mb-2 flex-row items-center">
               <View
                 className="mr-2 h-1.5 w-1.5 rounded-full"
                 style={{
@@ -954,7 +971,7 @@ export default function AnaSayfaScreen() {
 
             {topFishLoading ? (
               // Yükleme iskeleti — pill rozetlerini taklit eder
-              <View className="flex-row flex-wrap gap-2">
+              <View className="flex-row flex-wrap">
                 {[0, 1, 2, 3, 4].map((i) => (
                   <SkeletonBlock
                     key={i}
@@ -984,7 +1001,7 @@ export default function AnaSayfaScreen() {
               </View>
             ) : topFish && topFish.length > 0 ? (
               // Başarılı durum — API verisiyle rozetleri doldur
-              <View className="flex-row flex-wrap gap-2">
+              <View className="flex-row flex-wrap">
                 {topFish.map((fish, index) => (
                   <FishBadge key={fish} name={fish} rank={index + 1} />
                 ))}

@@ -66,7 +66,7 @@ export default function RecentCatchCard({
           </View>
 
           {/* Rozetler */}
-          <View className="flex-row flex-wrap gap-2">
+          <View className="flex-row flex-wrap items-center gap-2">
             <StatusBadge
               label={`${weightKg} kg`}
               bgClass="bg-mera-primary/10 dark:bg-mera-accent/15"
@@ -74,7 +74,7 @@ export default function RecentCatchCard({
               noMarginBottom
               noMarginLeft
             />
-            <View className="flex-row items-center rounded-full bg-mera-neutral-200 px-2.5 py-0.5 dark:bg-mera-neutral-900">
+            <View className="flex-row items-center justify-center rounded-full bg-mera-neutral-200 px-2.5 py-0.5 dark:bg-mera-neutral-900" style={{ alignSelf: "center" }}>
               <Ionicons name="location-outline" size={12} color="#64748B" />
               <Typography
                 variant="caption"

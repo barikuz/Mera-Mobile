@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuthStore } from "@/store/useAuthStore";
+import { useFishSpecies } from "./useCatalog";
 
 export type CatchItem = {
   id: string;
   species: string;
+  species_id: string | null;
   created_at: string | null;
   weight_kg: number | null;
   length_cm: number | null;
@@ -108,7 +110,8 @@ async function fetchCatches(): Promise<CatchItem[]> {
 
   return records.map((item, index) => {
     const record = item as Record<string, unknown>;
-    const rawSpecies = record.species;
+    const rawSpeciesId = record.species_id;
+    
     const rawDate =
       typeof record.created_at === "string"
         ? record.created_at
@@ -123,10 +126,8 @@ async function fetchCatches(): Promise<CatchItem[]> {
         typeof record.id === "string" || typeof record.id === "number"
           ? String(record.id)
           : `${index}-${rawDate ?? "catch"}`,
-      species:
-        typeof rawSpecies === "string" && rawSpecies.trim().length > 0
-          ? rawSpecies.trim()
-          : "Bilinmeyen Tür",
+      species: "", // Will be populated by useCatches hook with species catalog data
+      species_id: typeof rawSpeciesId === "string" ? rawSpeciesId : null,
       created_at: rawDate,
       weight_kg: typeof record.weight_kg === "number" ? record.weight_kg : null,
       length_cm: typeof record.length_cm === "number" ? record.length_cm : null,
@@ -140,6 +141,7 @@ async function fetchCatches(): Promise<CatchItem[]> {
 
 export function useCatches() {
   const { user, session, isInitialized } = useAuthStore();
+  const fishSpeciesQuery = useFishSpecies();
 
   return useQuery({
     queryKey: ["catches"],
@@ -147,14 +149,39 @@ export function useCatches() {
     enabled: isInitialized && !!user?.id && !!session?.access_token,
     staleTime: 15_000,
     gcTime: 60_000,
+    select: (catches) => {
+      // Create a map of species_id to species name for quick lookup
+      const speciesMap = new Map<string, string>();
+      
+      if (Array.isArray(fishSpeciesQuery.data)) {
+        fishSpeciesQuery.data.forEach((species) => {
+          speciesMap.set(String(species.id), species.name);
+        });
+      }
+      
+      // Map catches and populate species names from the catalog
+      return catches.map((catchItem) => ({
+        ...catchItem,
+        species: catchItem.species_id 
+          ? (speciesMap.get(catchItem.species_id) || "Bilinmeyen Tür")
+          : "Bilinmeyen Tür",
+      }));
+    },
   });
 }
 
 // ────────────────────────────────────────────────────────────────
-// Fetch — most recent single catch
+// Fetch — most recent single catch (raw — species name resolved in hook)
 // ────────────────────────────────────────────────────────────────
 
-async function fetchLatestCatch(): Promise<LatestCatch | null> {
+type RawLatestCatch = {
+  speciesId: string | null;
+  weightKg: number | null;
+  date: string;
+  location: string;
+};
+
+async function fetchLatestCatch(): Promise<RawLatestCatch | null> {
   const token = useAuthStore.getState().session?.access_token;
 
   if (!token) {
@@ -205,7 +232,9 @@ async function fetchLatestCatch(): Promise<LatestCatch | null> {
 
   const record = records[0] as Record<string, unknown>;
 
-  const rawSpecies = record.species;
+  // Backend stores species as species_id (UUID), not a name string
+  const rawSpeciesId = record.species_id;
+
   const rawDate =
     typeof record.created_at === "string"
       ? record.created_at
@@ -219,10 +248,7 @@ async function fetchLatestCatch(): Promise<LatestCatch | null> {
     typeof record.location_lng === "number" ? record.location_lng : null;
 
   return {
-    species:
-      typeof rawSpecies === "string" && rawSpecies.trim().length > 0
-        ? rawSpecies.trim()
-        : "Bilinmeyen Tür",
+    speciesId: typeof rawSpeciesId === "string" ? rawSpeciesId : null,
     weightKg: typeof record.weight_kg === "number" ? record.weight_kg : null,
     date: rawDate ? formatCatchDate(rawDate) : "—",
     location: formatCoords(lat, lng),
@@ -235,6 +261,7 @@ async function fetchLatestCatch(): Promise<LatestCatch | null> {
 
 export function useLatestCatch() {
   const { user, session, isInitialized } = useAuthStore();
+  const fishSpeciesQuery = useFishSpecies();
 
   return useQuery({
     queryKey: ["catches", "latest"],
@@ -242,5 +269,29 @@ export function useLatestCatch() {
     enabled: isInitialized && !!user?.id && !!session?.access_token,
     staleTime: 15_000,
     gcTime: 60_000,
+    select: (raw): LatestCatch | null => {
+      if (!raw) return null;
+
+      // Build species_id → name lookup from the catalog
+      const speciesMap = new Map<string, string>();
+      if (Array.isArray(fishSpeciesQuery.data)) {
+        fishSpeciesQuery.data.forEach((species) => {
+          speciesMap.set(String(species.id), species.name);
+        });
+      }
+
+      const resolvedName =
+        raw.speciesId && speciesMap.has(raw.speciesId)
+          ? (speciesMap.get(raw.speciesId) ?? "Bilinmeyen Tür")
+          : "Bilinmeyen Tür";
+
+      return {
+        species: resolvedName,
+        weightKg: raw.weightKg,
+        date: raw.date,
+        location: raw.location,
+      };
+    },
   });
 }
+
