@@ -4,7 +4,7 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -28,11 +28,12 @@ import SkeletonBlock from "@/components/ui/SkeletonBlock";
 import SpotCard from "@/components/ui/SpotCard";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
+import { useLatestCatch } from "@/hooks/useCatches";
 import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import { useFishingConditions } from "@/hooks/useFishingConditions";
-import { useLatestCatch } from "@/hooks/useCatches";
 import { useLocation } from "@/hooks/useLocation";
 import { useNearestSpots } from "@/hooks/useNearestSpots";
+import { useAssistantStore } from "@/store/useAssistantStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
 
@@ -47,35 +48,12 @@ type ConditionsStatus = "good" | "okay" | "poor";
 // Mock veriler
 // ────────────────────────────────────────────────────────────────
 
-
-
-
-const mockRecommendedSpot = {
-  name: "Rumelifeneri",
-  note: "Sabah akintisi ile palamut hareketli.",
-  coordinate: { latitude: 41.2308, longitude: 29.1248 },
+// Ekipman tipi eşleştirmesi: store değeri → kart etiketi
+const GEAR_TYPE_LABEL: Record<string, string> = {
+  rod: "Olta",
+  reel: "Makine",
+  bait: "Yem",
 };
-
-const mockGearRecommendations = [
-  {
-    id: "gear-rod",
-    type: "Olta",
-    name: "Shimano Nexave 2.40",
-    note: "Orta sertlik, kiyida ideal. ",
-  },
-  {
-    id: "gear-reel",
-    type: "Makine",
-    name: "Daiwa Revros LT",
-    note: "Hafif govde, uzun atis.",
-  },
-  {
-    id: "gear-bait",
-    type: "Yem",
-    name: "Silikon Sasi 8 cm",
-    note: "Bulanik suda etkili.",
-  },
-];
 
 const mockPopularSpots = [
   {
@@ -164,6 +142,29 @@ export default function AnaSayfaScreen() {
     isError: latestCatchError,
     refetch: refetchLatestCatch,
   } = useLatestCatch();
+
+  // ── AI öneri verisi (kalıcı depolama) ────────────────────────
+  const spotRecommendation = useAssistantStore(
+    (state) => state.spotRecommendation,
+  );
+  const gearRecommendation = useAssistantStore(
+    (state) => state.gearRecommendation,
+  );
+
+  // Zustand persist store'un AsyncStorage'ı okumayı bitirmesini bekle
+  const [isStoreHydrated, setIsStoreHydrated] = useState(() =>
+    useAssistantStore.persist.hasHydrated(),
+  );
+  useEffect(() => {
+    if (useAssistantStore.persist.hasHydrated()) {
+      setIsStoreHydrated(true);
+      return;
+    }
+    const unsub = useAssistantStore.persist.onFinishHydration(() =>
+      setIsStoreHydrated(true),
+    );
+    return unsub;
+  }, []);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -605,7 +606,10 @@ export default function AnaSayfaScreen() {
                 >
                   Son av yüklenemedi.
                 </Typography>
-                <Button title="Tekrar Dene" onPress={() => void refetchLatestCatch()} />
+                <Button
+                  title="Tekrar Dene"
+                  onPress={() => void refetchLatestCatch()}
+                />
               </View>
             ) : latestCatch ? (
               // Başarılı durum — API verisiyle kartı doldur
@@ -636,33 +640,147 @@ export default function AnaSayfaScreen() {
             )}
           </View>
 
-          {/* AI Önerisi Kartı */}
+          {/* AI Önerisi Kartı — Mera Önerisi */}
           <View className="mb-3">
-            <RecentSpotRecommendationCard
-              spotName={mockRecommendedSpot.name}
-              note={mockRecommendedSpot.note}
-              onPress={() => openCoordinateMap(mockRecommendedSpot.coordinate)}
-            />
+            {!isStoreHydrated ? (
+              // Yükleme iskeleti — mera kartının layout'unu taklit eder
+              <View className="overflow-hidden rounded-2xl border border-mera-accent/20 p-4">
+                <View className="mb-3 flex-row items-center">
+                  <SkeletonBlock
+                    className="mr-2 rounded-lg"
+                    style={{ height: 28, width: 28 }}
+                  />
+                  <SkeletonBlock
+                    className="rounded-full"
+                    style={{ height: 20, width: 48 }}
+                  />
+                </View>
+                <SkeletonBlock
+                  className="mb-1 rounded-md"
+                  style={{ height: 16, width: "50%" }}
+                />
+                <SkeletonBlock
+                  className="rounded-md"
+                  style={{ height: 12, width: "75%" }}
+                />
+              </View>
+            ) : spotRecommendation.lastResult &&
+              spotRecommendation.lastResult.length > 0 ? (
+              // Başarılı durum — store'daki ilk öneri
+              <RecentSpotRecommendationCard
+                spotName={spotRecommendation.lastResult[0].name}
+                note={spotRecommendation.lastResult[0].description}
+                onPress={() =>
+                  openCoordinateMap(
+                    spotRecommendation.lastResult![0].coordinate,
+                  )
+                }
+              />
+            ) : (
+              // Boş durum — henüz asistan kullanılmamış
+              <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-5 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+                <MaterialIcons
+                  name="auto-awesome"
+                  size={30}
+                  color={isDark ? "#475569" : "#94A3B8"}
+                />
+                <Typography
+                  variant="caption"
+                  className="mb-3 mt-2 text-center text-sm"
+                >
+                  Henüz bir mera önerisi yok. Asistanı kullanarak başla!
+                </Typography>
+                <View className="w-full">
+                  <Button
+                    title="Asistanı Aç"
+                    onPress={() => router.push("/assistant")}
+                  />
+                </View>
+              </View>
+            )}
           </View>
 
           {/* Ekipman Tavsiyeleri */}
           <View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingRight: 16 }}
-            >
-              <View className="flex-row gap-3">
-                {mockGearRecommendations.map((item) => (
-                  <RecentGearRecommendationCard
-                    key={item.id}
-                    type={item.type}
-                    name={item.name}
-                    note={item.note}
-                  />
-                ))}
+            {!isStoreHydrated ? (
+              // Yükleme iskeleti — yatay ekipman kart sırasını taklit eder
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingRight: 16 }}
+                scrollEnabled={false}
+              >
+                <View className="flex-row gap-3">
+                  {[0, 1, 2].map((i) => (
+                    <View
+                      key={i}
+                      className="w-44 overflow-hidden rounded-2xl border border-mera-neutral-200 dark:border-mera-neutral-500/30"
+                    >
+                      <View className="flex-row">
+                        <SkeletonBlock
+                          style={{ width: 3 }}
+                          className="rounded-none"
+                        />
+                        <View className="flex-1 p-3">
+                          <View className="mb-2 flex-row items-center">
+                            <SkeletonBlock
+                              className="mr-2 rounded-lg"
+                              style={{ height: 28, width: 28 }}
+                            />
+                            <SkeletonBlock
+                              className="rounded-full"
+                              style={{ height: 20, width: 48 }}
+                            />
+                          </View>
+                          <SkeletonBlock
+                            className="mb-1 rounded-md"
+                            style={{ height: 14, width: "80%" }}
+                          />
+                          <SkeletonBlock
+                            className="rounded-md"
+                            style={{ height: 12, width: "60%" }}
+                          />
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            ) : gearRecommendation.lastResult &&
+              gearRecommendation.lastResult.length > 0 ? (
+              // Başarılı durum — store'daki ekipman önerileri
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingRight: 16 }}
+              >
+                <View className="flex-row gap-3">
+                  {gearRecommendation.lastResult.map((item) => (
+                    <RecentGearRecommendationCard
+                      key={item.type}
+                      type={GEAR_TYPE_LABEL[item.type] ?? item.label}
+                      name={item.name}
+                      note={item.expertNote}
+                    />
+                  ))}
+                </View>
+              </ScrollView>
+            ) : (
+              // Boş durum — ekipman önerisi yok
+              <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-5 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+                <MaterialCommunityIcons
+                  name="fish-off"
+                  size={30}
+                  color={isDark ? "#475569" : "#94A3B8"}
+                />
+                <Typography
+                  variant="caption"
+                  className="mt-2 text-center text-sm"
+                >
+                  Henüz bir ekipman tavsiyesi yok.
+                </Typography>
               </View>
-            </ScrollView>
+            )}
           </View>
         </View>
 

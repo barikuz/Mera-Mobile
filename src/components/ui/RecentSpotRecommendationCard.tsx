@@ -66,7 +66,11 @@ export default function RecentSpotRecommendationCard({
               <Typography variant="body" className="mb-1 font-inter-semibold">
                 {spotName}
               </Typography>
-              <Typography variant="caption" className="text-xs">
+              <Typography
+                variant="caption"
+                className="text-xs"
+                numberOfLines={3}
+              >
                 {note}
               </Typography>
             </View>
