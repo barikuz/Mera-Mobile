@@ -203,7 +203,12 @@ export default function ProfileScreen() {
       <View className="mb-3 rounded-2xl border border-mera-neutral-200 bg-white p-4 dark:border-mera-neutral-500 dark:bg-mera-neutral-800">
         <View className="flex-row items-stretch">
           <View className="flex-1 pr-3">
-            <Typography variant="h2" className="mb-1 text-lg">
+            <Typography
+              variant="h2"
+              className="mb-1 text-lg"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {item.species}
             </Typography>
 

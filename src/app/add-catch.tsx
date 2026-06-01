@@ -366,14 +366,16 @@ export default function AddCatchScreen() {
                     key={option}
                     onPress={() => handleSpeciesSelect(option)}
                     activeOpacity={0.8}
-                    className={`mb-3 h-14 w-[48%] items-center justify-center rounded-2xl border ${
+                    className={`mb-3 w-[48%] items-center justify-center rounded-2xl border px-2 py-3 ${
                       isSelected
                         ? "border-mera-primary bg-mera-primary dark:border-mera-accent dark:bg-mera-accent"
                         : "border-mera-neutral-200 bg-mera-neutral-100 dark:border-mera-neutral-500 dark:bg-mera-neutral-900"
                     }`}
+                    style={{ minHeight: 56 }}
                   >
                     <Text
-                      className={`text-base font-inter-semibold ${
+                      numberOfLines={2}
+                      className={`text-center text-sm font-inter-semibold ${
                         isSelected
                           ? "text-white dark:text-mera-neutral-900"
                           : "text-mera-neutral-900 dark:text-white"
