@@ -1,17 +1,25 @@
 /**
  * SkeletonBlock — Pulse animasyonlu iskelet yükleyici bloğu.
  * Yükleme durumlarında içerik placeholder'ı olarak kullanılır.
- * className ile boyut ve şekil (rounded, rounded-full vb.) belirlenir.
+ * className ile şekil (rounded vb.), style ile boyut belirlenir.
+ *
+ * Not: Animated.View üzerinde NativeWind'in flex/width/height sınıfları
+ * güvenilir çalışmayabilir; bu nedenle boyut için style prop'unu kullanın.
  */
 import React, { useEffect, useRef } from "react";
-import { Animated } from "react-native";
+import { Animated, StyleProp, ViewStyle } from "react-native";
 
 interface SkeletonBlockProps {
-  /** Boyut, şekil ve konum için NativeWind sınıfları (örn. "h-5 w-3/5 rounded-md") */
+  /** Şekil ve konum için NativeWind sınıfları (örn. "rounded-md") */
   className?: string;
+  /** Boyut ve layout için explicit stil — flex, width, height buraya gelir */
+  style?: StyleProp<ViewStyle>;
 }
 
-export default function SkeletonBlock({ className = "" }: SkeletonBlockProps) {
+export default function SkeletonBlock({
+  className = "",
+  style,
+}: SkeletonBlockProps) {
   const opacity = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
@@ -36,7 +44,7 @@ export default function SkeletonBlock({ className = "" }: SkeletonBlockProps) {
   return (
     <Animated.View
       className={`rounded-lg bg-mera-neutral-200 dark:bg-mera-neutral-500 ${className}`}
-      style={{ opacity }}
+      style={[{ opacity }, style]}
     />
   );
 }
