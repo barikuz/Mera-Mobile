@@ -33,6 +33,7 @@ import { useExpandableOverlay } from "@/hooks/useExpandableOverlay";
 import { useFishingConditions } from "@/hooks/useFishingConditions";
 import { useLocation } from "@/hooks/useLocation";
 import { useNearestSpots } from "@/hooks/useNearestSpots";
+import { useTopFish, useTopProducts } from "@/hooks/useTopStats";
 import { useAssistantStore } from "@/store/useAssistantStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
@@ -42,7 +43,6 @@ import { useCartStore } from "@/store/useCartStore";
 // ────────────────────────────────────────────────────────────────
 
 type Coordinate = { latitude: number; longitude: number };
-type ConditionsStatus = "good" | "okay" | "poor";
 
 // ────────────────────────────────────────────────────────────────
 // Mock veriler
@@ -79,29 +79,6 @@ const mockPopularSpots = [
   },
 ];
 
-const mockPopularProducts = [
-  {
-    id: "product-1",
-    name: "Karbon Olta 2.70",
-    price: 1450,
-    image_url: "https://picsum.photos/seed/mera-rod/400/400",
-  },
-  {
-    id: "product-2",
-    name: "Spin Makine 3000",
-    price: 2190,
-    image_url: "https://picsum.photos/seed/mera-reel/400/400",
-  },
-  {
-    id: "product-3",
-    name: "Popper Set 5'li",
-    price: 720,
-    image_url: "https://picsum.photos/seed/mera-bait/400/400",
-  },
-];
-
-const mockTopFishes = ["Levrek", "Sazan", "Uskumru", "Sudak", "Istavrit"];
-
 // ────────────────────────────────────────────────────────────────
 // Ana Sayfa Ekranı
 // ────────────────────────────────────────────────────────────────
@@ -130,6 +107,23 @@ export default function AnaSayfaScreen() {
     error: nearestSpotsError,
     refetch: refetchNearestSpots,
   } = useNearestSpots(coords);
+
+  // ── En çok satılan ürünler ───────────────────────────────────
+  const {
+    data: topProducts,
+    isLoading: topProductsLoading,
+    isError: topProductsError,
+    refetch: refetchTopProducts,
+  } = useTopProducts();
+
+  // ── En çok tutulan balıklar ──────────────────────────────────
+  const {
+    data: topFish,
+    isLoading: topFishLoading,
+    isError: topFishError,
+    refetch: refetchTopFish,
+  } = useTopFish();
+
   const addToCart = useCartStore((state) => state.addToCart);
   const mapOverlay = useExpandableOverlay();
   const [mapMode, setMapMode] = useState<"spots" | "coordinate">("spots");
@@ -197,8 +191,16 @@ export default function AnaSayfaScreen() {
     refetchConditions();
     refetchNearestSpots();
     void refetchLatestCatch();
+    void refetchTopProducts();
+    void refetchTopFish();
     setTimeout(() => setRefreshing(false), 1200);
-  }, [refetchConditions, refetchNearestSpots, refetchLatestCatch]);
+  }, [
+    refetchConditions,
+    refetchNearestSpots,
+    refetchLatestCatch,
+    refetchTopProducts,
+    refetchTopFish,
+  ]);
 
   // ── Memoize edilmiş veri dönüşümleri ─────────────────────────
   const formattedPopularSpots = useMemo(
@@ -852,15 +854,85 @@ export default function AnaSayfaScreen() {
                 En çok satılan ürünler
               </Typography>
             </View>
-            <View className="flex-row flex-wrap justify-between gap-3">
-              {mockPopularProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={handleAddToCart}
+
+            {topProductsLoading ? (
+              // Yükleme iskeleti — 2 sütunlu ürün grid'ini taklit eder
+              <View className="flex-row flex-wrap justify-between gap-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <View
+                    key={i}
+                    className="overflow-hidden rounded-2xl bg-white dark:bg-mera-neutral-800"
+                    style={{ width: "48%" }}
+                  >
+                    <SkeletonBlock
+                      style={{ aspectRatio: 1 }}
+                      className="rounded-none"
+                    />
+                    <View className="p-3">
+                      <SkeletonBlock
+                        className="mb-2 rounded-md"
+                        style={{ height: 14, width: "70%" }}
+                      />
+                      <View className="flex-row items-center justify-between mt-1">
+                        <SkeletonBlock
+                          className="rounded-md"
+                          style={{ height: 16, width: "40%" }}
+                        />
+                        <SkeletonBlock
+                          className="rounded-lg"
+                          style={{ height: 32, width: 32 }}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : topProductsError ? (
+              // Hata durumu — kullanıcı dostu fallback
+              <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-5 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+                <Ionicons
+                  name="cloud-offline-outline"
+                  size={30}
+                  color={isDark ? "#475569" : "#94A3B8"}
                 />
-              ))}
-            </View>
+                <Typography
+                  variant="caption"
+                  className="mb-3 mt-2 text-center text-sm"
+                >
+                  Ürünler yüklenemedi.
+                </Typography>
+                <Button
+                  title="Tekrar Dene"
+                  onPress={() => void refetchTopProducts()}
+                />
+              </View>
+            ) : topProducts && topProducts.length > 0 ? (
+              // Başarılı durum — API verisiyle kartları doldur
+              <View className="flex-row flex-wrap justify-between gap-3">
+                {topProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                  />
+                ))}
+              </View>
+            ) : (
+              // Boş durum — satılan ürün verisi henüz yok
+              <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-5 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+                <MaterialCommunityIcons
+                  name="package-variant-closed"
+                  size={30}
+                  color={isDark ? "#475569" : "#94A3B8"}
+                />
+                <Typography
+                  variant="caption"
+                  className="mt-2 text-center text-sm"
+                >
+                  Henüz satış verisi yok.
+                </Typography>
+              </View>
+            )}
           </View>
 
           {/* En Çok Tutulan Balıklar */}
@@ -879,11 +951,60 @@ export default function AnaSayfaScreen() {
                 En çok tutulan balıklar
               </Typography>
             </View>
-            <View className="flex-row flex-wrap gap-2">
-              {mockTopFishes.map((fish, index) => (
-                <FishBadge key={fish} name={fish} rank={index + 1} />
-              ))}
-            </View>
+
+            {topFishLoading ? (
+              // Yükleme iskeleti — pill rozetlerini taklit eder
+              <View className="flex-row flex-wrap gap-2">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <SkeletonBlock
+                    key={i}
+                    className="rounded-full"
+                    style={{ height: 32, width: 90 + (i % 2) * 20 }}
+                  />
+                ))}
+              </View>
+            ) : topFishError ? (
+              // Hata durumu — kullanıcı dostu fallback
+              <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-5 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+                <Ionicons
+                  name="cloud-offline-outline"
+                  size={30}
+                  color={isDark ? "#475569" : "#94A3B8"}
+                />
+                <Typography
+                  variant="caption"
+                  className="mb-3 mt-2 text-center text-sm"
+                >
+                  Balık verileri yüklenemedi.
+                </Typography>
+                <Button
+                  title="Tekrar Dene"
+                  onPress={() => void refetchTopFish()}
+                />
+              </View>
+            ) : topFish && topFish.length > 0 ? (
+              // Başarılı durum — API verisiyle rozetleri doldur
+              <View className="flex-row flex-wrap gap-2">
+                {topFish.map((fish, index) => (
+                  <FishBadge key={fish} name={fish} rank={index + 1} />
+                ))}
+              </View>
+            ) : (
+              // Boş durum — av istatistiği henüz yok
+              <View className="items-center rounded-2xl border border-mera-neutral-200 bg-white p-5 dark:border-mera-neutral-500/30 dark:bg-mera-neutral-800">
+                <MaterialCommunityIcons
+                  name="fish-off"
+                  size={30}
+                  color={isDark ? "#475569" : "#94A3B8"}
+                />
+                <Typography
+                  variant="caption"
+                  className="mt-2 text-center text-sm"
+                >
+                  Henüz balık istatistiği yok.
+                </Typography>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
