@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 
+import AuthToast, { useAuthToast } from "@/components/ui/AuthToast";
 import Button from "@/components/ui/Button";
 import FishBadge from "@/components/ui/FishBadge";
 import FishingConditionsHeroCard from "@/components/ui/FishingConditionsHeroCard";
@@ -161,6 +162,9 @@ export default function AnaSayfaScreen() {
   }, []);
 
   const [refreshing, setRefreshing] = useState(false);
+
+  // ── Auth toast bildirisi ─────────────────────────────────────
+  const authToast = useAuthToast();
 
   // ── Harita işlevleri ──────────────────────────────────────────
   const openSpotsMap = () => {
@@ -338,7 +342,13 @@ export default function AnaSayfaScreen() {
                   color={iconColor}
                 />
               }
-              onPress={() => router.push("/profile")}
+              onPress={() => {
+                if (!user) {
+                  authToast.show();
+                  return;
+                }
+                router.push("/profile");
+              }}
               iconBgClass="bg-amber-500/10 dark:bg-amber-400/15"
             />
           </View>
@@ -646,7 +656,13 @@ export default function AnaSayfaScreen() {
                 <View className="w-full">
                   <Button
                     title="İlk avını ekle"
-                    onPress={() => router.push("/add-catch")}
+                    onPress={() => {
+                      if (!user) {
+                        authToast.show();
+                        return;
+                      }
+                      router.push("/add-catch");
+                    }}
                   />
                 </View>
               </View>
@@ -1036,6 +1052,9 @@ export default function AnaSayfaScreen() {
         selectedCoordinate={selectedCoordinate}
         readOnlyCoordinate={mapMode === "coordinate"}
       />
+
+      {/* ── Auth Toast Bildirisi ─────────────────────────────── */}
+      <AuthToast visible={authToast.visible} opacity={authToast.opacity} />
     </ScreenContainer>
   );
 }
