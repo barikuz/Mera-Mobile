@@ -13,7 +13,7 @@
  */
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -120,6 +120,7 @@ export default function FishingSpotMapFullscreen({
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [isLocatingCurrentPosition, setIsLocatingCurrentPosition] =
     useState(false);
+  const mapRef = useRef<MapView>(null);
 
   // Custom backend'den hava durumu verisini fetch eder
   // API endpoint: /weather?lat={lat}&lon={lon}
@@ -184,6 +185,12 @@ export default function FishingSpotMapFullscreen({
       onCoordinateSelect({
         latitude: currentPosition.coords.latitude,
         longitude: currentPosition.coords.longitude,
+      });
+      mapRef.current?.animateToRegion({
+        latitude: currentPosition.coords.latitude,
+        longitude: currentPosition.coords.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
       });
     } finally {
       setIsLocatingCurrentPosition(false);
@@ -311,7 +318,7 @@ export default function FishingSpotMapFullscreen({
       <Animated.View style={[styles.container, animatedOverlayStyle]}>
         <Animated.View style={[styles.mapContainer, animatedMapStyle]}>
           <MapView
-            key={`${resolvedRegion.latitude}-${resolvedRegion.longitude}`}
+            ref={mapRef}
             style={styles.fullscreenMap}
             initialRegion={mapInitialRegion}
             showsUserLocation={true}

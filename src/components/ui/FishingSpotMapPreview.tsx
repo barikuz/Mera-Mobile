@@ -80,9 +80,8 @@ export default function FishingSpotMapPreview({
     >
       <View style={styles.container}>
         <MapView
-          key={`${resolvedRegion.latitude}-${resolvedRegion.longitude}`}
           style={styles.map}
-          initialRegion={initialRegion}
+          region={initialRegion}
           showsUserLocation={showsUserLocation}
           showsMyLocationButton={false}
           toolbarEnabled={false}
