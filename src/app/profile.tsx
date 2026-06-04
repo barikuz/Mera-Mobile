@@ -7,6 +7,7 @@ import {
   Alert,
   FlatList,
   Image,
+  TouchableOpacity,
   useColorScheme,
   View,
 } from "react-native";
@@ -316,6 +317,29 @@ export default function ProfileScreen() {
             {profile?.email || user?.email || "E-posta bulunamadı"}
           </Typography>
         </View>
+
+        {/* Siparişlerim butonu */}
+        <TouchableOpacity
+          onPress={() => router.push("/orders")}
+          activeOpacity={0.7}
+          className="mt-6 flex-row items-center rounded-2xl border border-mera-neutral-200 bg-white px-4 py-4 dark:border-mera-neutral-500 dark:bg-mera-neutral-800"
+        >
+          <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl bg-mera-primary/10 dark:bg-mera-accent/10">
+            <Ionicons
+              name="receipt-outline"
+              size={20}
+              color={COLORS[themeMode].iconActive}
+            />
+          </View>
+          <Typography variant="body" className="flex-1 font-inter-semibold">
+            Siparişlerim
+          </Typography>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={COLORS[themeMode].iconInactive}
+          />
+        </TouchableOpacity>
 
         <View className="mt-6">
           {isLoadingCatches ? (

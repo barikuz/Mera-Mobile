@@ -229,6 +229,14 @@ export default function TabLayout() {
           />
 
           <Tabs.Screen
+            name="orders"
+            options={{
+              title: "Siparişlerim",
+              href: null,
+            }}
+          />
+
+          <Tabs.Screen
             name="add-catch"
             options={{
               title: "Av Ekle",

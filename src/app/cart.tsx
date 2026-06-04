@@ -13,17 +13,13 @@ import {
 } from "react-native";
 
 import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
+import { formatCurrency } from "@/utils/format";
 import { useCartStore } from "@/store/useCartStore";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-
-const currencyFormatter = new Intl.NumberFormat("tr-TR", {
-  style: "currency",
-  currency: "TRY",
-  maximumFractionDigits: 2,
-});
 
 export default function CartScreen() {
   const router = useRouter();
@@ -36,30 +32,19 @@ export default function CartScreen() {
   if (items.length === 0) {
     return (
       <ScreenContainer>
-        <View className="flex-1 items-center justify-center px-6">
-          <View className="w-full items-center px-6 py-8">
+        <EmptyState
+          icon={
             <MaterialCommunityIcons
               name="shopping-outline"
               size={44}
               color="#64748B"
             />
-            <Typography variant="h2" className="mt-4 text-center">
-              Sepetiniz şu an boş
-            </Typography>
-            <Typography
-              variant="body"
-              className="mt-2 text-center text-mera-neutral-500"
-            >
-              Ürün eklemek için mağazaya dönün.
-            </Typography>
-            <View className="mt-6 w-full">
-              <Button
-                title="Mağazaya Dön"
-                onPress={() => router.push("/shop")}
-              />
-            </View>
-          </View>
-        </View>
+          }
+          title="Sepetiniz şu an boş"
+          description="Ürün eklemek için mağazaya dönün."
+          buttonTitle="Mağazaya Dön"
+          onButtonPress={() => router.push("/shop")}
+        />
       </ScreenContainer>
     );
   }
@@ -93,7 +78,7 @@ export default function CartScreen() {
                   variant="caption"
                   className="mt-1 mb-3 text-mera-neutral-500"
                 >
-                  {currencyFormatter.format(item.price)} / adet
+                  {formatCurrency(item.price)} / adet
                 </Typography>
               </View>
 
@@ -151,7 +136,7 @@ export default function CartScreen() {
             Genel Toplam
           </Typography>
           <Typography variant="h2">
-            {currencyFormatter.format(totalPrice)}
+            {formatCurrency(totalPrice)}
           </Typography>
         </View>
         <Button title="Ödemeye Geç" onPress={() => router.push("/checkout")} />

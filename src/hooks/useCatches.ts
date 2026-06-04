@@ -3,6 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFishSpecies } from "./useCatalog";
 
+// ────────────────────────────────────────────────────────────────
+// Date helper
+// ────────────────────────────────────────────────────────────────
+
+// Tarih biçimlendirme artık paylaşılan format modülünden gelir.
+// Geriye dönük uyumluluk için takma ad (alias) olarak yeniden dışa aktarılır.
+import { formatDate } from "@/utils/format";
+export { formatDate as formatCatchDate } from "@/utils/format";
+
 export type CatchItem = {
   id: string;
   species: string;
@@ -21,34 +30,6 @@ export type LatestCatch = {
   date: string;
   location: string;
 };
-
-// ────────────────────────────────────────────────────────────────
-// Date helper
-// ────────────────────────────────────────────────────────────────
-
-export function formatCatchDate(isoString: string | null): string {
-  if (!isoString) return "Tarih bilgisi yok";
-  try {
-    // Supabase bazen timezone suffix'i olmadan UTC string döndürür
-    // (örn. "2026-05-30T20:15:00"). Bu durumda JS engine
-    // string'i local time olarak parse eder ve saat yanlış çıkar.
-    // Suffix yoksa eksplisit olarak UTC olduğunu belirtiyoruz.
-    const normalised =
-      /[Z+\-]\d*$/.test(isoString.trim()) ? isoString : isoString + "Z";
-    const d = new Date(normalised);
-    if (Number.isNaN(d.getTime())) return "Tarih bilgisi yok";
-    return d.toLocaleString("tr-TR", {
-      timeZone: "Europe/Istanbul",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "Tarih bilgisi yok";
-  }
-}
 
 function formatCoords(lat: number | null, lng: number | null): string {
   if (lat === null || lng === null) return "Konum belirtilmedi";
@@ -111,7 +92,7 @@ async function fetchCatches(): Promise<CatchItem[]> {
   return records.map((item, index) => {
     const record = item as Record<string, unknown>;
     const rawSpeciesId = record.species_id;
-    
+
     const rawDate =
       typeof record.created_at === "string"
         ? record.created_at
@@ -152,18 +133,18 @@ export function useCatches() {
     select: (catches) => {
       // Create a map of species_id to species name for quick lookup
       const speciesMap = new Map<string, string>();
-      
+
       if (Array.isArray(fishSpeciesQuery.data)) {
         fishSpeciesQuery.data.forEach((species) => {
           speciesMap.set(String(species.id), species.name);
         });
       }
-      
+
       // Map catches and populate species names from the catalog
       return catches.map((catchItem) => ({
         ...catchItem,
-        species: catchItem.species_id 
-          ? (speciesMap.get(catchItem.species_id) || "Bilinmeyen Tür")
+        species: catchItem.species_id
+          ? speciesMap.get(catchItem.species_id) || "Bilinmeyen Tür"
           : "Bilinmeyen Tür",
       }));
     },
@@ -250,7 +231,7 @@ async function fetchLatestCatch(): Promise<RawLatestCatch | null> {
   return {
     speciesId: typeof rawSpeciesId === "string" ? rawSpeciesId : null,
     weightKg: typeof record.weight_kg === "number" ? record.weight_kg : null,
-    date: rawDate ? formatCatchDate(rawDate) : "—",
+    date: rawDate ? formatDate(rawDate) : "—",
     location: formatCoords(lat, lng),
   };
 }
@@ -294,4 +275,3 @@ export function useLatestCatch() {
     },
   });
 }
-

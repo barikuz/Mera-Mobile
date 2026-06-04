@@ -36,7 +36,7 @@ export default function StatusBadge({
 }: StatusBadgeProps) {
   return (
     <View
-      className={`rounded-full px-2.5 py-0.5 ${noMarginLeft ? "" : "ml-2"} ${noMarginBottom ? "" : "mb-2"} ${bgClass} ${className}`}
+      className={`rounded-full px-3 py-1.5 ${noMarginLeft ? "" : "ml-2"} ${noMarginBottom ? "" : "mb-2"} ${bgClass} ${className}`}
     >
       <Typography
         variant="caption"

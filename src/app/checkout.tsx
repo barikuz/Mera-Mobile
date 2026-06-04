@@ -17,11 +17,7 @@ import Typography from "@/components/ui/Typography";
 import { COLORS } from "@/constants/color";
 import { useCartStore } from "@/store/useCartStore";
 
-const currencyFormatter = new Intl.NumberFormat("tr-TR", {
-  style: "currency",
-  currency: "TRY",
-  maximumFractionDigits: 2,
-});
+import { formatCurrency } from "@/utils/format";
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -169,7 +165,7 @@ export default function CheckoutScreen() {
                     </Text>
                   </View>
                   <Text className="text-sm font-inter-semibold text-mera-primary dark:text-mera-accent">
-                    {currencyFormatter.format(item.price * item.quantity)}
+                    {formatCurrency(item.price * item.quantity)}
                   </Text>
                 </View>
               ))}
@@ -190,7 +186,7 @@ export default function CheckoutScreen() {
                   Toplam Tutar
                 </Text>
                 <Text className="mt-1 text-2xl font-inter-bold text-mera-primary dark:text-mera-accent">
-                  {currencyFormatter.format(totalPrice)}
+                  {formatCurrency(totalPrice)}
                 </Text>
               </View>
             </View>
